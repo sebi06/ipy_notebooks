@@ -1,0 +1,308 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<HardwareExperiment Version="1.1">
+  <RunMode>ValidateAndAdaptBeforePerformEnabled, OptimizeBeforePerformEnabled</RunMode>
+  <BeforeHardwareSetting>Vor Exp [Brigh]</BeforeHardwareSetting>
+  <AfterHardwareSetting>Nach Exp [Brigh]</AfterHardwareSetting>
+  <ExperimentBlockIndex>0</ExperimentBlockIndex>
+  <IsSegmented>false</IsSegmented>
+  <IsStandardMode>true</IsStandardMode>
+  <AutoSave IsActivated="false" EnableSingleFileSave="false">
+    <StorageFolder>C:\Users\M1TBE\Pictures</StorageFolder>
+    <Name>New</Name>
+    <IsAutoSubFolder>true</IsAutoSubFolder>
+    <IsAutoSubFolderExternal>true</IsAutoSubFolderExternal>
+    <IsClosedOnCompletion>false</IsClosedOnCompletion>
+    <SingleFileSaveFormat>JPG</SingleFileSaveFormat>
+    <ConvertTo8Bit>false</ConvertTo8Bit>
+    <AddXmlMetadata>false</AddXmlMetadata>
+    <ApplyDisplayMappings>false</ApplyDisplayMappings>
+    <SaveOriginalData>true</SaveOriginalData>
+    <UseChannelNames>false</UseChannelNames>
+    <Quality>90</Quality>
+    <CompressionMethod>None</CompressionMethod>
+    <SingleFileSaveDestinationFolder>C:\Users\M1TBE\Pictures</SingleFileSaveDestinationFolder>
+    <SingleFileName>New</SingleFileName>
+    <DimensionsForSeparateFolders>-C;-T;-Z;-S</DimensionsForSeparateFolders>
+  </AutoSave>
+  <BlockExecutionOrder>1</BlockExecutionOrder>
+  <LoopDefinitions />
+  <ExperimentBlocks>
+    <AcquisitionBlock IsActivated="true" BlockReference="635594212029144386">
+      <RunMode>ComponentUpdateEnabled, StateUpdateEnabled</RunMode>
+      <SubDimensionSetups>
+        <MultiTrackSetup IsActivated="true">
+          <IsTIRFAngleSynchronized>true</IsTIRFAngleSynchronized>
+          <Track IsActivated="true" IsSelected="false">
+            <BeforeHardwareSetting>Vor [Brigh]</BeforeHardwareSetting>
+            <AfterHardwareSetting>Nach [Brigh]</AfterHardwareSetting>
+            <ZStackMode>Yes</ZStackMode>
+            <UseZStackCenter>true</UseZStackCenter>
+            <ZStackSliceIndex>1</ZStackSliceIndex>
+            <IsDisabledForApoTome>false</IsDisabledForApoTome>
+            <FocusOffset>0</FocusOffset>
+            <DirectDevice>Standard</DirectDevice>
+            <Channels>
+              <Channel IsActivated="true" IsSelected="false" ChannelSetupId="635654754958733368" InstanceId="635654754958733368" Name="TL Brightfield" Description="370 nm">
+                <Color>#FFFFFFFF</Color>
+                <PixelShiftX>0</PixelShiftX>
+                <PixelShiftY>0</PixelShiftY>
+                <DataGrabberSetup>
+                  <CameraFrameSetup Id="MTBCamera_MTBTube_Cameraport.Axiocam506m">
+                    <ExposureTime IsActivated="true">171.1897</ExposureTime>
+                    <Adjust IsActivated="true">1</Adjust>
+                    <AutoExposure IsActivated="true">false</AutoExposure>
+                    <EMGain>50</EMGain>
+                    <ShadingReference IsActivated="true">false</ShadingReference>
+                    <ShadingReferenceSource IsActivated="true">1</ShadingReferenceSource>
+                  </CameraFrameSetup>
+                </DataGrabberSetup>
+                <ContrastMethod>
+                  <Name>TL Brightfield</Name>
+                  <ShortName>Brigh</ShortName>
+                  <Description></Description>
+                  <IlluminationType>Transmitted</IlluminationType>
+                  <ContrastMethods>TransmittedLightBrightfield</ContrastMethods>
+                  <ContrastTypes>BrightField</ContrastTypes>
+                  <Color>#FFFFFFFF</Color>
+                </ContrastMethod>
+              </Channel>
+            </Channels>
+          </Track>
+          <Track IsActivated="true" IsSelected="false">
+            <BeforeHardwareSetting>Vor [Brigh]_2</BeforeHardwareSetting>
+            <AfterHardwareSetting>Nach [Brigh]_2</AfterHardwareSetting>
+            <ZStackMode>Yes</ZStackMode>
+            <UseZStackCenter>true</UseZStackCenter>
+            <ZStackSliceIndex>1</ZStackSliceIndex>
+            <IsDisabledForApoTome>false</IsDisabledForApoTome>
+            <FocusOffset>0</FocusOffset>
+            <DirectDevice>Standard</DirectDevice>
+            <Channels>
+              <Channel IsActivated="true" IsSelected="false" ChannelSetupId="635654754964833372" InstanceId="635654754964833372" Name="TL Brightfield_2" Description="405 nm">
+                <Color>#FFFFFFFF</Color>
+                <PixelShiftX>0</PixelShiftX>
+                <PixelShiftY>0</PixelShiftY>
+                <DataGrabberSetup>
+                  <CameraFrameSetup Id="MTBCamera_MTBTube_Cameraport.Axiocam506m">
+                    <ExposureTime IsActivated="true">34.767</ExposureTime>
+                    <Adjust IsActivated="true">1</Adjust>
+                    <AutoExposure IsActivated="true">false</AutoExposure>
+                    <EMGain>50</EMGain>
+                    <ShadingReference IsActivated="true">false</ShadingReference>
+                    <ShadingReferenceSource IsActivated="true">1</ShadingReferenceSource>
+                  </CameraFrameSetup>
+                </DataGrabberSetup>
+                <ContrastMethod>
+                  <Name>TL Brightfield</Name>
+                  <ShortName>Brigh</ShortName>
+                  <Description></Description>
+                  <IlluminationType>Transmitted</IlluminationType>
+                  <ContrastMethods>TransmittedLightBrightfield</ContrastMethods>
+                  <ContrastTypes>BrightField</ContrastTypes>
+                  <Color>#FFFFFFFF</Color>
+                </ContrastMethod>
+              </Channel>
+            </Channels>
+          </Track>
+          <SubDimensionSetups>
+            <ZStackSetup IsActivated="true">
+              <IsCenterMode>true</IsCenterMode>
+              <IsIntervalKept>false</IsIntervalKept>
+              <Offset>0</Offset>
+              <UseFocusBacklashCorrection>true</UseFocusBacklashCorrection>
+              <First>
+                <Distance>
+                  <Value>3.853E-05</Value>
+                  <DefaultUnitFormat>um</DefaultUnitFormat>
+                </Distance>
+              </First>
+              <Last>
+                <Distance>
+                  <Value>4.993E-05</Value>
+                  <DefaultUnitFormat>um</DefaultUnitFormat>
+                </Distance>
+              </Last>
+              <Interval>
+                <Distance>
+                  <Value>5.6999999999999994E-07</Value>
+                  <DefaultUnitFormat>um</DefaultUnitFormat>
+                </Distance>
+              </Interval>
+              <SubDimensionSetups />
+            </ZStackSetup>
+          </SubDimensionSetups>
+        </MultiTrackSetup>
+        <PanoramaSetup IsActivated="false">
+          <SubDimensionSetups />
+        </PanoramaSetup>
+        <TilesSetup IsActivated="false">
+          <SubDimensionSetups />
+        </TilesSetup>
+        <LiveSetup IsActivated="false">
+          <SubDimensionSetups />
+          <Channels />
+        </LiveSetup>
+        <TimeSeriesSetup IsActivated="false">
+          <IsInteractive>true</IsInteractive>
+          <IsLongAsPossible>false</IsLongAsPossible>
+          <IsBurstMode>false</IsBurstMode>
+          <Duration>
+            <Cycles>1</Cycles>
+          </Duration>
+          <IsFastAsPossible>false</IsFastAsPossible>
+          <Interval>
+            <TimeSpan>
+              <Value>0</Value>
+              <DefaultUnitFormat>ms</DefaultUnitFormat>
+            </TimeSpan>
+          </Interval>
+          <BeforeHardwareSetting></BeforeHardwareSetting>
+          <AfterHardwareSetting></AfterHardwareSetting>
+          <StartMode>
+            <Manual />
+          </StartMode>
+          <StopMode>
+            <Manual />
+          </StopMode>
+          <PauseBeginMode>
+            <Manual />
+          </PauseBeginMode>
+          <PauseEndMode>
+            <Manual />
+          </PauseEndMode>
+          <SwitchCollection />
+          <SubDimensionSetups />
+        </TimeSeriesSetup>
+      </SubDimensionSetups>
+      <HelperSetups>
+        <AcquisitionModeSetup IsActivated="false">
+          <SelectedDetector>MTBCamera_MTBTube_Cameraport.Axiocam506m</SelectedDetector>
+          <Detectors>
+            <Camera Id="MTBCamera_MTBTube_Cameraport.Axiocam506m">
+              <ApplyCameraProfile Status="Valid">false</ApplyCameraProfile>
+              <ApplyImageOrientation Status="Valid">true</ApplyImageOrientation>
+              <ExposureTime Status="Valid" IsActivated="true">17.338</ExposureTime>
+              <Frame Status="Valid">0,0,2752,2208</Frame>
+              <ImageOrientation Status="Valid">0</ImageOrientation>
+              <ContinuousAcquisitionSafeMode Status="Valid"></ContinuousAcquisitionSafeMode>
+              <EnableSignalsForFastAcq Status="Valid"></EnableSignalsForFastAcq>
+              <ShadingReference Status="Valid">false</ShadingReference>
+              <ShadingReferenceSource Status="Valid">1</ShadingReferenceSource>
+              <Resolution Status="Valid">0</Resolution>
+              <BinningList Status="Valid">0</BinningList>
+              <AnalogGainModeList Status="Valid">0</AnalogGainModeList>
+              <LiveSpeed Status="Valid">1</LiveSpeed>
+              <Trigger Status="Valid">false</Trigger>
+              <TriggerMode Status="Valid">0</TriggerMode>
+              <SnapShutter Status="Valid">false</SnapShutter>
+              <LiveShutter Status="Valid">false</LiveShutter>
+              <ShutterMode Status="Valid">0</ShutterMode>
+              <ShutterOpenDelay Status="Valid">0</ShutterOpenDelay>
+              <PixelClock Status="Valid">0</PixelClock>
+              <ImageDeliveryBufferCount Status="Valid">4</ImageDeliveryBufferCount>
+              <Adjust Status="Valid" IsActivated="true">1</Adjust>
+              <AdjustFrameRate Status="Valid">false</AdjustFrameRate>
+              <AutoExposure Status="Valid">false</AutoExposure>
+              <AutoExposureFrame Status="Valid">Empty</AutoExposureFrame>
+              <Binning Status="Valid">1,1</Binning>
+              <BlackReference Status="Valid">false</BlackReference>
+              <DualCameraCalibration Status="Valid">false</DualCameraCalibration>
+              <DualCameraCalibrationId Status="Valid">None</DualCameraCalibrationId>
+              <ExposureDelay Status="Valid">0</ExposureDelay>
+              <FrameRateTarget Status="Valid">30</FrameRateTarget>
+              <NoiseFilter Status="Valid">false</NoiseFilter>
+              <NoiseFilterThreshold Status="Valid">1.5</NoiseFilterThreshold>
+              <ReferenceImageCount Status="Valid">3</ReferenceImageCount>
+              <UnsharpMask Status="Valid">false</UnsharpMask>
+              <UnsharpMaskState Status="Valid"></UnsharpMaskState>
+              <AutomaticTriggerControl Status="Valid">true</AutomaticTriggerControl>
+              <AbortOnMissedFrames Status="Valid">true</AbortOnMissedFrames>
+              <FrameTime Status="Valid">0</FrameTime>
+              <ReadoutPort Status="Valid">0</ReadoutPort>
+              <TileAdjustment Status="Valid">0</TileAdjustment>
+              <TargetTemperature Status="Valid">18</TargetTemperature>
+              <Compression Status="Valid">false</Compression>
+              <ContinuousAcquisitionMode Status="Valid">0</ContinuousAcquisitionMode>
+              <SequenceCount Status="Valid">0</SequenceCount>
+              <SequenceProgress Status="Valid">true</SequenceProgress>
+              <LEDIntensity Status="Valid">7</LEDIntensity>
+              <LEDIntensityTrigger Status="Valid">5</LEDIntensityTrigger>
+              <Temperature Status="Valid">18</Temperature>
+              <FrameRate Status="Valid">11.2</FrameRate>
+              <ImageByteSize Status="Valid">12152832</ImageByteSize>
+              <ImageFrame Status="Valid">0,0,2752,2208</ImageFrame>
+              <LiveFrame Status="Valid">0,0,2752,2208</LiveFrame>
+              <LiveImageByteSize Status="Valid">3038208</LiveImageByteSize>
+              <LiveImageFrame Status="Valid">0,0,1376,1104</LiveImageFrame>
+            </Camera>
+          </Detectors>
+          <Devices />
+        </AcquisitionModeSetup>
+      </HelperSetups>
+    </AcquisitionBlock>
+  </ExperimentBlocks>
+  <HardwareSettingsPool>
+    <HardwareSetting Name="Vor [Brigh]">
+      <ParameterCollection Id="MTBReflectorChanger">
+        <Position Status="Valid" IsActivated="true">1</Position>
+        <PositionName Status="Valid" IsActivated="true">User.370/10</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBTubeVisCamChanger">
+        <Position IsActivated="true">3</Position>
+        <PositionName IsActivated="true">FotoTube.VIS_Cam_0/100</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBHXP120Shutter">
+        <IsClosed Status="Valid" IsActivated="true">false</IsClosed>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBTLFilterChanger1">
+        <Position Status="Valid" IsActivated="true">2</Position>
+        <PositionName Status="Valid" IsActivated="true">Transmission.6</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBTLFilterChanger2">
+        <Position Status="Valid" IsActivated="true">4</Position>
+        <PositionName Status="Valid" IsActivated="true">User.BP 360</PositionName>
+      </ParameterCollection>
+    </HardwareSetting>
+    <HardwareSetting Name="Nach [Brigh]">
+      <ParameterCollection Id="MTBTLShutter">
+        <IsClosed IsActivated="true">true</IsClosed>
+      </ParameterCollection>
+    </HardwareSetting>
+    <HardwareSetting Name="Vor [Brigh]_2">
+      <ParameterCollection Id="MTBTLShutter">
+        <IsClosed IsActivated="true">false</IsClosed>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBReflectorChanger">
+        <Position Status="Valid" IsActivated="true">2</Position>
+        <PositionName Status="Valid" IsActivated="true">User.405/10</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBTubeVisCamChanger">
+        <Position IsActivated="true">3</Position>
+        <PositionName IsActivated="true">FotoTube.VIS_Cam_0/100</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBTLFilterChanger1">
+        <Position Status="Valid" IsActivated="true">3</Position>
+        <PositionName Status="Valid" IsActivated="true">Transmission.0_4</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBTLFilterChanger2">
+        <Position Status="Valid" IsActivated="true">1</Position>
+        <PositionName Status="Valid" IsActivated="true">Transmission.100</PositionName>
+      </ParameterCollection>
+      <ParameterCollection Id="MTBHXP120Shutter">
+        <IsClosed Status="Valid" IsActivated="true">false</IsClosed>
+      </ParameterCollection>
+    </HardwareSetting>
+    <HardwareSetting Name="Nach [Brigh]_2">
+      <ParameterCollection Id="MTBTLShutter">
+        <IsClosed IsActivated="true">true</IsClosed>
+      </ParameterCollection>
+    </HardwareSetting>
+  </HardwareSettingsPool>
+  <ExperimentFeedback IsActivated="false">
+    <PreScript></PreScript>
+    <LoopScript></LoopScript>
+    <PostScript></PostScript>
+    <Actions />
+  </ExperimentFeedback>
+  <AdditionalSettings />
+</HardwareExperiment>
