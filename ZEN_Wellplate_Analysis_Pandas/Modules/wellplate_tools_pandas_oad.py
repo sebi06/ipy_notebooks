@@ -16,6 +16,15 @@ except:
 import os
 
 
+# WELLID_KEY = 'ImageSceneContainerName::Image Scene Container Name '
+# ROWID_KEY = 'ImageSceneRow::Image Scene Row Index!!I'
+# COLUMNID_KEY = 'ImageSceneColumn::Image Scene Column Index!!I'
+
+WELLID_KEY = 'WellID'
+ROWID_KEY = 'RowID'
+COLUMNID_KEY = 'ColumnID'
+
+
 def extract_labels(nr, nc):
     """
     Define helper function to be able to extract the well labels depending
@@ -63,9 +72,9 @@ def convert_row_index(rowid):
 
 def get_well_all_parameters(df, wellid,
                             colname='all',
-                            wellID_key='WellID',
-                            rowID_key='RowID',
-                            colID_key='ColumnID'):
+                            wellID_key=WELLID_KEY,
+                            rowID_key=ROWID_KEY,
+                            colID_key=COLUMNID_KEY):
     """
     Gets all or specific columns for specific well.
     If the colname was specified, only this specific column will be returned.
@@ -76,6 +85,8 @@ def get_well_all_parameters(df, wellid,
     :return: new_df - new dataframe containing only data for a specific well
     """
 
+    # wellID_key = 'ImageSceneContainerName::Image Scene Container Name '
+    wellID_key = WELLID_KEY
     new_df = df.loc[df[wellID_key] == wellid]
 
     if colname != 'all':
@@ -84,7 +95,7 @@ def get_well_all_parameters(df, wellid,
     return new_df
 
 
-def get_well_row(df, rowid, rowID_key='RowID'):
+def get_well_row(df, rowid, rowID_key=ROWID_KEY,):
     """
     This function extracts all data based on the row index.
 
@@ -106,6 +117,88 @@ def convert_array_to_heatmap(hmarray, nr, nc):
     heatmap_dataframe = pd.DataFrame(hmarray, index=ly, columns=lx)
 
     return heatmap_dataframe
+
+
+# def rename_col_fromcsv_all(df):
+#     """
+#     Inside the ZEN image analysis software the columns of the result tables have
+#     have very long and inconvenient names. This function is designed to get rid
+#     of those names and replace them by shorter version.
+#
+#     Important is to check for the order of the columns inside the CSV table.
+#     If this order is changes the renaming function must be adapted accordingly.
+#
+#     :param df - dataframe containing mean features for all objects (AllRegions)
+#     :return: df: dataframe with shorter columns names and correct data types.
+#     """
+#
+#     # delete unneeded rows
+#     df = df.drop([0])
+#     # rename the columns in order to use more descriptive names
+#     df.rename(columns={df.columns[0]: 'WellID',
+#                        df.columns[1]: 'RowID',
+#                        df.columns[2]: 'ColumnID',
+#                        df.columns[3]: 'PositionIndex',
+#                        df.columns[4]: 'CellNumber',
+#                        df.columns[5]: 'DAPI_MeanInt',
+#                        df.columns[6]: 'DAPI_MeanArea'}, inplace=True)
+#
+#     # convert columns to numeric types when possible, since there might be issues
+#     # determine the correct data types for some columns
+#     df = df.convert_objects(convert_numeric=True)
+#
+#     # convert columns to numeric types when possible --> convert to float
+#     df['DAPI_MeanInt'] = df['DAPI_MeanInt'].str.replace(',', '.').astype('float')
+#     df['DAPI_MeanArea'] = df['DAPI_MeanArea'].str.replace(',', '.').astype('float')
+#
+#     return df
+#
+#
+# def rename_col_fromcsv_single(dfs, paramlist):
+#     """
+#     Inside the ZEN image analysis software the columns of the result tables have
+#     have very long and inconvenient names. This function is designed to get rid
+#     of those names and replace them by shorter version.
+#
+#     Important is to check for the order of the columns inside the CSV table.
+#     If this order is changes the renaming function must be adapted accordingly.
+#
+#     Convention for the ZEN Image Analysis Parameters order:
+#
+#     WellID - RowID - ColumnID - ID - Index - Param1 - Param2 - ...
+#
+#     WHEN THIS CONVENTION IS NOT USED, THE FOLLOWING CODE WILL NOT WORK AS EXPECTED.
+#
+#     :param dfs - dataframe containing all features for single objects (SingleRegions)
+#     :param paramlist - list containing the desired column names (short version)
+#     :return: dfs - dataframe with shorter columns names and correct data types.
+#     """
+#
+#     # delete unneeded rows --> contains the units
+#     #dfs = dfs.drop([0])
+#     # rename columns
+#     #dfs.rename(columns={dfs.columns[0]: 'WellID',
+#     #                    dfs.columns[1]: 'RowID',
+#     #                    dfs.columns[2]: 'ColumnID',
+#     #                   dfs.columns[3]: 'ID',
+#     #                    dfs.columns[4]: 'Index'}, inplace=True)
+#
+#     for i in range(0, len(paramlist)):
+#
+#         # rename the columns with measured parameters and correct types
+#         dfs.rename(columns={dfs.columns[i + 5]: paramlist[i]}, inplace=True)
+#         try:
+#             dfs[paramlist[i]] = dfs[paramlist[i]].str.replace(',', '.').astype('float')
+#         except:
+#             print('No correction of types possible for parameter: ', paramlist[i])
+#
+#     # # convert columns to numeric types to avaoid problems with the data types and decimal separators
+#     # dfs['DAPI_Mean'] = dfs['DAPI_Mean'].str.replace(',', '.').astype('float')
+#     # dfs['Area'] = dfs['Area'].str.replace(',', '.').astype('float')
+#     # dfs['Perimeter'] = dfs['Perimeter'].str.replace(',', '.').astype('float')
+#     # dfs['Roundness'] = dfs['Roundness'].str.replace(',', '.').astype('float')
+#
+#     return dfs
 
 
 def rename_columns(dfs, paramlist, verbose=False):
@@ -145,9 +238,8 @@ def fill_heatmaps(dfs, numparams, num_nonmp, nr, nc,
                   statfunc='mean',
                   showbar=False,
                   verbose=False,
-                  wellID_key='WellID',
-                  rowID_key='RowID',
-                  colID_key='ColumnID'):
+                  rowID_key=ROWID_KEY,
+                  colID_key=COLUMNID_KEY):
     """
     Create dictionary containing heatmaps (dataframes) for all measured parameters
 
@@ -174,7 +266,7 @@ def fill_heatmaps(dfs, numparams, num_nonmp, nr, nc,
     heatmap_dict = {}
 
     # get all wells containing some data
-    #wellID_key = WELLID_KEY  # 'ImageSceneContainerName::Image Scene Container Name '
+    wellID_key = WELLID_KEY  # 'ImageSceneContainerName::Image Scene Container Name '
     print('---------------------------------------------------')
     print('wellID_key : ', wellID_key)
     print('Found keys:')
@@ -190,11 +282,18 @@ def fill_heatmaps(dfs, numparams, num_nonmp, nr, nc,
     except:
         print('Did not find RowID and ColumnID key in dataframe.')
 
+
     try:
         df_stats.drop(['ParentID'], axis=1, inplace=True)
     except:
         print('Did not find ParentID key in dataframe.')
 
+    # try:
+    #     df_stats.drop(['RowID'], axis=1, inplace=True)
+    # except:
+    #     print('Did not find RowID key in dataframe.')
+    #
+    #
     new_cols = df_stats.columns
     cols_orig = dfs.columns
 
@@ -234,11 +333,13 @@ def fill_heatmaps(dfs, numparams, num_nonmp, nr, nc,
             print("Found data for wells : ",  current_wellid)
 
         # get all data for the current well from the over dataframe
-        df_tmp = get_well_all_parameters(dfs, current_wellid,
-                                         wellID_key='WellID',
-                                         rowID_key='RowID',
-                                         colID_key='ColumnID')
-        
+        df_tmp = get_well_all_parameters(dfs, current_wellid)
+
+        # fill in the wellID, rowID and colID into the new dataframe for the statistics
+        #df_stats.iloc[well][new_cols[0]] = current_wellid
+        #df_stats.iloc[well][new_cols[1]] = df_tmp.iloc[0][new_cols[1]]
+        #df_stats.iloc[well][new_cols[2]] = df_tmp.iloc[0][new_cols[2]]
+
         df_stats.iloc[well][new_cols.get_loc('WellID')] = current_wellid
         df_stats.iloc[well][new_cols.get_loc('RowID')] = df_tmp.iloc[0][cols_orig.get_loc('RowID')]
         df_stats.iloc[well][new_cols.get_loc('ColumnID')] = df_tmp.iloc[0][cols_orig.get_loc('ColumnID')]
