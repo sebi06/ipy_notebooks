@@ -14,7 +14,7 @@ from skimage.filters import threshold_otsu, rank
 from skimage.morphology import disk
 from skimage.external import tifffile
 import scipy.ndimage as nd
-import cv2 as cv
+#import cv2 as cv
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
@@ -22,7 +22,8 @@ import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from skimage.measure import label, regionprops
-import zisraw as zis
+#import zisraw as zis
+import czifile as zis
 import xmltodict
 
 
