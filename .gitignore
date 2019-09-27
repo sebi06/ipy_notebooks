@@ -1,4 +1,5 @@
 .vscode/settings.json
+.ipynb_checkpoints
 APEER/.vscode/settings.json
 APEER/modules/.vscode/settings.json
 APEER/modules/__pycache__/particleanalyzer.cpython-36.pyc
