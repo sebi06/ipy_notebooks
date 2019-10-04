@@ -334,6 +334,7 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
     metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
     metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
+    metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
     metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
     metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
     metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
