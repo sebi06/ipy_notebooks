@@ -258,8 +258,15 @@ def get_metadata_czi(filename, dim2none=False):
 
     channels = []
     for ch in range(metadata['SizeC']):
-        channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
-                                        ['Channels']['Channel'][ch]['ShortName'])
+        try:
+            channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+                                            ['Channels']['Channel'][ch]['ShortName'])
+        except:
+            try:
+                channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+                                                ['Channels']['Channel']['ShortName'])
+            except:
+                channels.append(str(ch))
 
     metadata['Channels'] = channels
 
@@ -330,19 +337,59 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
 
     metadata['Instrument'] = metadata['Information']['Instrument']
+
     # get objective data
-    metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
-    metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
-    metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
-    metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
-    metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
-    metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
-    metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
+    try:
+        metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
+    except:
+        metadata['ObjName'] = None
+
+    try:
+        metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
+    except:
+        metadata['ObjImmersion'] = None
+
+    try:
+        metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
+    except:
+        metadata['ObjNA'] = None
+
+    try:
+        metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
+    except:
+        metadata['ObjID'] = None
+
+    try:
+        metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
+    except:
+        metadata['TubelensMag'] = None
+
+    try:
+        metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
+    except:
+        metadata['ObjNominalMag'] = None
+
+    try:
+        metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
+    except:
+        metadata['ObjMag'] = None
 
     # get detector information
-    metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
-    metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
-    metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
+    try:
+        metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
+    except:
+        metadata['DetectorID'] = None
+
+    try:
+        metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
+    except:
+        metadata['DetectorModel'] = None
+
+    try:
+        metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
+    except:
+        metadata['DetectorName'] =  None
+
 
     # delete some key from dict
     del metadata['Instrument']
