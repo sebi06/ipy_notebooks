@@ -332,9 +332,19 @@ def get_metadata_czi(filename, dim2none=False):
     """
 
     # try to get software version
-    metadata['SW-Name'] = metadata['Information']['Application']['Name']
-    metadata['SW-Name'] = metadata['Information']['Application']['Version']
-    metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
+    try:
+        metadata['SW-Name'] = metadata['Information']['Application']['Name']
+        metadata['SW-Version'] = metadata['Information']['Application']['Version']
+    except:
+        metadata['SW-Name'] = None
+        metadata['SW-Version'] = None
+
+
+    try:
+        metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
+    except:
+        metadata['AcqDate'] = None
+
 
     metadata['Instrument'] = metadata['Information']['Instrument']
 
