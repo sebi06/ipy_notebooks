@@ -306,11 +306,18 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['Scaling'] = metadatadict_czi['ImageDocument']['Metadata']['Scaling']
         metadata['XScale'] = float(metadata['Scaling']['Items']['Distance'][0]['Value']) * 1000000
         metadata['YScale'] = float(metadata['Scaling']['Items']['Distance'][1]['Value']) * 1000000
-        metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
-        metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
+        try:
+            metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
+            metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
+        except:
+            metadata['XScaleUnit'] = None
+            metadata['YScaleUnit'] = None
         try:
             metadata['ZScale'] = float(metadata['Scaling']['Items']['Distance'][2]['Value']) * 1000000
-            metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
+            try:
+                metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
+            except:
+                metadata['ZScaleUnit'] = None
         except:
             if dim2none:
                 metadata['ZScale'] = None
@@ -339,12 +346,10 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['SW-Name'] = None
         metadata['SW-Version'] = None
 
-
     try:
         metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
     except:
         metadata['AcqDate'] = None
-
 
     metadata['Instrument'] = metadata['Information']['Instrument']
 
@@ -398,8 +403,7 @@ def get_metadata_czi(filename, dim2none=False):
     try:
         metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
     except:
-        metadata['DetectorName'] =  None
-
+        metadata['DetectorName'] = None
 
     # delete some key from dict
     del metadata['Instrument']
