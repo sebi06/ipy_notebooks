@@ -18,7 +18,8 @@ import ipywidgets as widgets
 import imgfileutils as imf
 
 
-basefolder = r'/datadisk1/tuxedo/IPython_Notebooks/testdata'
+#basefolder = r'/datadisk1/tuxedo/IPython_Notebooks/testdata'
+basefolder = r'C:\Temp\input'
 #basefolder = r'/home/sebi06/testdata'
 
 #filename = os.path.join(basefolder, 'Filter_with_Particles_big.ome.tiff')
@@ -26,7 +27,9 @@ basefolder = r'/datadisk1/tuxedo/IPython_Notebooks/testdata'
 #filename = os.path.join(basefolder, 'Osteosarcoma_01.ome.tiff')
 #filename = os.path.join(basefolder, 'Filter_with_Particles_big.czi')
 #filename = os.path.join(basefolder, '8Brains_DAPI_5X_stitched.czi')
-filename = os.path.join(basefolder, 'S=2_T=5_Z=3_CH=2_A2.czi')
+#filename = os.path.join(basefolder, r'S=2_T=5_Z=3_CH=2_A2.czi')
+filename = os.path.join(basefolder, r'Filter_with_Particles_small.czi')
+#filename = os.path.join(basefolder, r'DTScan_ID4_small_AF555.czi')
 
 
 image_name = os.path.basename(filename)
