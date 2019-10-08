@@ -258,8 +258,15 @@ def get_metadata_czi(filename, dim2none=False):
 
     channels = []
     for ch in range(metadata['SizeC']):
-        channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
-                                        ['Channels']['Channel'][ch]['ShortName'])
+        try:
+            channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+                                            ['Channels']['Channel'][ch]['ShortName'])
+        except:
+            try:
+                channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+                                                ['Channels']['Channel']['ShortName'])
+            except:
+                channels.append(str(ch))
 
     metadata['Channels'] = channels
 
@@ -299,11 +306,18 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['Scaling'] = metadatadict_czi['ImageDocument']['Metadata']['Scaling']
         metadata['XScale'] = float(metadata['Scaling']['Items']['Distance'][0]['Value']) * 1000000
         metadata['YScale'] = float(metadata['Scaling']['Items']['Distance'][1]['Value']) * 1000000
-        metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
-        metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
+        try:
+            metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
+            metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
+        except:
+            metadata['XScaleUnit'] = None
+            metadata['YScaleUnit'] = None
         try:
             metadata['ZScale'] = float(metadata['Scaling']['Items']['Distance'][2]['Value']) * 1000000
-            metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
+            try:
+                metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
+            except:
+                metadata['ZScaleUnit'] = None
         except:
             if dim2none:
                 metadata['ZScale'] = None
@@ -325,24 +339,71 @@ def get_metadata_czi(filename, dim2none=False):
     """
 
     # try to get software version
-    metadata['SW-Name'] = metadata['Information']['Application']['Name']
-    metadata['SW-Name'] = metadata['Information']['Application']['Version']
-    metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
+    try:
+        metadata['SW-Name'] = metadata['Information']['Application']['Name']
+        metadata['SW-Version'] = metadata['Information']['Application']['Version']
+    except:
+        metadata['SW-Name'] = None
+        metadata['SW-Version'] = None
+
+    try:
+        metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
+    except:
+        metadata['AcqDate'] = None
 
     metadata['Instrument'] = metadata['Information']['Instrument']
+
     # get objective data
-    metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
-    metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
-    metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
-    metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
-    metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
-    metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
-    metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
+    try:
+        metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
+    except:
+        metadata['ObjName'] = None
+
+    try:
+        metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
+    except:
+        metadata['ObjImmersion'] = None
+
+    try:
+        metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
+    except:
+        metadata['ObjNA'] = None
+
+    try:
+        metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
+    except:
+        metadata['ObjID'] = None
+
+    try:
+        metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
+    except:
+        metadata['TubelensMag'] = None
+
+    try:
+        metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
+    except:
+        metadata['ObjNominalMag'] = None
+
+    try:
+        metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
+    except:
+        metadata['ObjMag'] = None
 
     # get detector information
-    metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
-    metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
-    metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
+    try:
+        metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
+    except:
+        metadata['DetectorID'] = None
+
+    try:
+        metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
+    except:
+        metadata['DetectorModel'] = None
+
+    try:
+        metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
+    except:
+        metadata['DetectorName'] = None
 
     # delete some key from dict
     del metadata['Instrument']
@@ -355,14 +416,59 @@ def get_metadata_czi(filename, dim2none=False):
     return metadata
 
 
-def get_array_czi(filename, replacezero=True):
+def get_dimorder(dimstring):
+
+    dimindex_list = []
+    dims = ['B', 'S', 'T', 'C', 'Z', 'Y', 'X', '0']
+    dims_dict = {}
+
+    for d in dims:
+
+        dims_dict[d] = dimstring.find(d)
+        dimindex_list.append(dimstring.find(d))
+
+    numvalid_dims = sum(i > 0 for i in dimindex_list)
+
+    return dims_dict, dimindex_list, numvalid_dims
+
+
+def get_array_czi(filename,
+                  cziaxes='BSTCZYX0',
+                  blockindex=0,
+                  sceneindex=0,
+                  replacezero=True):
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
     cziarray = czi.asarray()
 
+    # get additional information about dimension order etc.
+    dim_dict, dim_list, numvalid_dims = get_dimorder(cziaxes)
+
+    print(dim_dict)
+    print(dim_list)
+    print(numvalid_dims)
+
+    # determine what to squeeze
+    if dim_dict['B'] < 0 and dim_dict['S'] >= 0:
+        # B does not exist but S does
+        cut = (0, numvalid_dims)
+    if dim_dict['B'] >= 0 and dim_dict['S'] >= 0:
+        # B and S do exist
+        cut = (0, 1, numvalid_dims)
+    if dim_dict['B'] < 0 and dim_dict['S'] < 0:
+        # B and S do not exist
+        cut = (numvalid_dims)
+    if dim_dict['B'] >= 0 and dim_dict['S'] < 0:
+        # B does exist but S does not
+        cut = (0, numvalid_dims)
+
+    print('cut', cut)
+
+    cziarray = np.squeeze(cziarray, axis=cut)
+
     if replacezero:
-        array = replaceZeroNaN(array, value=0)
+        cziarray = replaceZeroNaN(cziarray, value=0)
 
     czi.close()
 
