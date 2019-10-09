@@ -17,6 +17,7 @@ def create_metadata_dict():
 
     metadata = {'Directory': None,
                 'Filename': None,
+                'Extension': None,
                 'Name': None,
                 'AcqDate': None,
                 'TotalSeries': None,
@@ -57,6 +58,7 @@ def get_metadata_ometiff(filename, omemd, series=0):
     # get directory and filename etc.
     metadata['Directory'] = os.path.dirname(filename)
     metadata['Filename'] = os.path.basename(filename)
+    metadata['Extension'] = 'ome.tiff'
     metadata['AcqDate'] = omemd.image(series).AcquisitionDate
     metadata['Name'] = omemd.image(series).Name
 
@@ -135,23 +137,23 @@ def get_metadata(imagefile, series=0):
     return md
 
 
-def create_ipyviewer(array5d, metadata):
+def create_ipyviewer_ome_tiff(array5d, metadata):
 
-    t = widgets.IntSlider(description='T:',
+    t = widgets.IntSlider(description='Time:',
                           min=1,
                           max=metadata['SizeT'],
                           step=1,
                           value=1,
                           continuous_update=False)
 
-    z = widgets.IntSlider(description='Z:',
+    z = widgets.IntSlider(description='Z-Plane:',
                           min=1,
                           max=metadata['SizeZ'],
                           step=1,
                           value=1,
                           continuous_update=False)
 
-    c = widgets.IntSlider(description='C:',
+    c = widgets.IntSlider(description='Channel:',
                           min=1,
                           max=metadata['SizeC'],
                           step=1,
@@ -174,16 +176,79 @@ def create_ipyviewer(array5d, metadata):
 
     ui = widgets.VBox([t, z, c, r])
 
-    def get_TZC(t, z, c, r):
-        display_image(array5d, t=t, z=z, c=c, vmin=r[0], vmax=r[1])
+    def get_TZC_ometiff(t, z, c, r):
+        display_image(array5d, imagetype='ometiff', t=t, z=z, c=c, vmin=r[0], vmax=r[1])
 
-    out = widgets.interactive_output(get_TZC, {'t': t, 'z': z, 'c': c, 'r': r})
+    out = widgets.interactive_output(get_TZC_ometiff, {'t': t, 'z': z, 'c': c, 'r': r})
 
     return out, ui  # , t, z, c, r
 
 
-def display_image(array5d, t=0, c=0, z=0, vmin=0, vmax=1000):
-    image = array5d[t - 1, z - 1, c - 1, :, :]
+def create_ipyviewer_czi(array, metadata):
+
+    s = widgets.IntSlider(description='Scenes:',
+                          min=1,
+                          max=metadata['SizeS'],
+                          step=1,
+                          value=1,
+                          continuous_update=False)
+
+    t = widgets.IntSlider(description='Time:',
+                          min=1,
+                          max=metadata['SizeT'],
+                          step=1,
+                          value=1,
+                          continuous_update=False)
+
+    z = widgets.IntSlider(description='Z-Plane:',
+                          min=1,
+                          max=metadata['SizeZ'],
+                          step=1,
+                          value=1,
+                          continuous_update=False)
+
+    c = widgets.IntSlider(description='Channel:',
+                          min=1,
+                          max=metadata['SizeC'],
+                          step=1,
+                          value=1)
+
+    print(array.min(), array.max())
+
+    r = widgets.IntRangeSlider(description='Display Range:',
+                               min=array.min(),
+                               max=array.max(),
+                               step=1,
+                               value=[array.min(), array.max()],
+                               continuous_update=False)
+
+    # disable slider that are not needed
+    if metadata['SizeS'] == 1:
+        s.disabled = True
+    if metadata['SizeT'] == 1:
+        t.disabled = True
+    if metadata['SizeZ'] == 1:
+        z.disabled = True
+    if metadata['SizeC'] == 1:
+        c.disabled = True
+
+    ui = widgets.VBox([s, t, z, c, r])
+
+    def get_TZC_czi(s, t, z, c, r):
+        display_image(array, s=s, t=t, z=z, c=c, vmin=r[0], vmax=r[1])
+
+    out = widgets.interactive_output(get_TZC_czi, {'s': s, 't': t, 'z': z, 'c': c, 'r': r})
+
+    return out, ui  # , t, z, c, r
+
+
+def display_image(array, imagetype='ometiff', s=0, m=0, t=0, c=0, z=0, vmin=0, vmax=1000):
+
+    if imagetype == 'ometiff':
+        image = array[t - 1, z - 1, c - 1, :, :]
+    if imagetype == 'czi':
+        image = array[s - 1, m - 1, t - 1, z - 1, c - 1, :, :]
+
     # display the labelled image
     fig, ax = plt.subplots(figsize=(10, 10))
     divider = make_axes_locatable(ax)
@@ -191,11 +256,6 @@ def display_image(array5d, t=0, c=0, z=0, vmin=0, vmax=1000):
     im = ax.imshow(image, vmin=vmin, vmax=vmax, interpolation='nearest', cmap=cm.gray)
     fig.colorbar(im, cax=cax, orientation='vertical')
     print('Min-Max (Current Plane):', image.min(), '-', image.max())
-
-
-def get_TZC(t, z, c, r):
-
-    display_image(array5d, t=t, z=z, c=c, vmin=r[0], vmax=r[1])
 
 
 def get_metadata_czi(filename, dim2none=False):
@@ -211,6 +271,7 @@ def get_metadata_czi(filename, dim2none=False):
     # get directory and filename etc.
     metadata['Directory'] = os.path.dirname(filename)
     metadata['Filename'] = os.path.basename(filename)
+    metadata['Extension'] = 'czi'
 
     # add axes and shape information
     metadata['Axes'] = czi.axes
@@ -306,6 +367,8 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['Scaling'] = metadatadict_czi['ImageDocument']['Metadata']['Scaling']
         metadata['XScale'] = float(metadata['Scaling']['Items']['Distance'][0]['Value']) * 1000000
         metadata['YScale'] = float(metadata['Scaling']['Items']['Distance'][1]['Value']) * 1000000
+        metadata['XScale'] = np.round(metadata['XScale'], 3)
+        metadata['YScale'] = np.round(metadata['YScale'], 3)
         try:
             metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
             metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
@@ -314,6 +377,7 @@ def get_metadata_czi(filename, dim2none=False):
             metadata['YScaleUnit'] = None
         try:
             metadata['ZScale'] = float(metadata['Scaling']['Items']['Distance'][2]['Value']) * 1000000
+            metadata['ZScale'] = np.round(metadata['ZScale'], 3)
             try:
                 metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
             except:
@@ -436,7 +500,7 @@ def get_array_czi(filename,
                   cziaxes='BSTCZYX0',
                   blockindex=0,
                   sceneindex=0,
-                  replacezero=True):
+                  replacezero=False):
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
