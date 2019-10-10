@@ -1,6 +1,7 @@
 .vscode/settings.json
 .vscode/launch.json
 .ipynb_checkpoints
+.pyc
 APEER/.vscode/settings.json
 APEER/modules/.vscode/settings.json
 APEER/modules/__pycache__/particleanalyzer.cpython-36.pyc
@@ -20,3 +21,4 @@ ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_Are
 ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_ObjectNumbers.png
 ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_Ratio.png
 APEER/.ipynb_checkpoints/APEER_Particle_Analysis V2-checkpoint.ipynb
+
