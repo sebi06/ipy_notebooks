@@ -1,0 +1,459 @@
+{
+    "id": "cd49fc27-4573-4d4b-8bcb-90b2f83e3c99",
+    "title": "Particle Analyzer 2D",
+    "producerId": "20646a42-edb2-4503-a12a-d9b915637c1f",
+    "repositoryId": "5bd4be0c-b920-4f12-a76f-6f8bac696625",
+    "createdAt": "2019-06-04T12:38:48.839254+00:00",
+    "categoryId": "b74acf8a-0188-4449-bc49-8abbaa3abf5a",
+    "categoryName": "Measurement",
+    "systemModuleType": null,
+    "latestPublicVersion": {
+        "id": "1f1785d5-871b-47bd-81ce-344bdcfe0b9c",
+        "moduleId": "cd49fc27-4573-4d4b-8bcb-90b2f83e3c99",
+        "versionNumber": 4,
+        "description": "<h2>Overview</h2><p><br></p><p>The module will analyze the particle in 2d images, meaning it will do it on a slice-per-slice basis (even for a Z-Stack). The image will be read using BioFormats</p><p>&nbsp;</p><h2>How to use&nbsp;</h2><p><br></p><ul><li>Select the input binary image.</li><li>Specify the channel to be extracted</li><li>Selection option to apply watershed to split objects</li><li>Specify Min &amp; Max für particle size and circularity to filter objects</li><li>Select the desired output format for the result table (TXT or CSV)</li></ul>",
+        "summary": "The module extracts a channel from a binary 2d image and analyzes all the found particles or objects",
+        "image": "https://caprodstorage.blob.core.windows.net/public/module_manager/version_image/20646a42-edb2-4503-a12a-d9b915637c1f/5e3baf6c-ae6a-4b82-a9ca-468fa64d5541?refresh=3b516646-5598-c2ff-df3f-8db9927a39d8",
+        "createdAt": "2019-08-13T15:27:24.182615+00:00",
+        "modifiedAt": "0001-01-01T00:00:00+00:00",
+        "specification": {
+            "spec": {
+                "inputs": {
+                    "IMAGEPATH": {
+                        "type:file": {
+                            "format": [
+                                "ome-tiff",
+                                "czi",
+                                "tiff",
+                                "png",
+                                "jpeg"
+                            ]
+                        }
+                    },
+                    "EXTRACT_CHANNEL": {
+                        "type:choice_binary": null,
+                        "default": false
+                    },
+                    "CHINDEX": {
+                        "type:integer": {
+                            "min": 1,
+                            "max": 32
+                        },
+                        "default": 1
+                    },
+                    "FILL_HOLES": {
+                        "type:choice_binary": null,
+                        "default": true
+                    },
+                    "WATERSHED": {
+                        "type:choice_binary": null,
+                        "default": false
+                    },
+                    "MINSIZE": {
+                        "type:integer": {
+                            "max": 10000000,
+                            "min": 1
+                        },
+                        "default": 1
+                    },
+                    "MAXSIZE": {
+                        "type:integer": {
+                            "max": 10000000,
+                            "min": 1
+                        },
+                        "default": 10000000
+                    },
+                    "MINCIRC": {
+                        "type:number": {
+                            "lower_inclusive": 0,
+                            "upper_inclusive": 1
+                        },
+                        "default": 0
+                    },
+                    "MAXCIRC": {
+                        "type:number": {
+                            "lower_inclusive": 0,
+                            "upper_inclusive": 1
+                        },
+                        "default": 1
+                    },
+                    "TABLE_FORMAT": {
+                        "type:choice_single": [
+                            "CSV",
+                            "TXT"
+                        ],
+                        "default": "TXT"
+                    }
+                },
+                "outputs": {
+                    "PASTACK": {
+                        "type:file": {
+                            "format": "ome-tiff"
+                        }
+                    },
+                    "RESULTS": {
+                        "type:file": {
+                            "format": "csv"
+                        }
+                    }
+                }
+            },
+            "ui": {
+                "inputs": {
+                    "IMAGEPATH": {
+                        "label": "Imagefile",
+                        "index": 1,
+                        "widget:none": null,
+                        "description": "Choose the image to be processed"
+                    },
+                    "EXTRACT_CHANNEL": {
+                        "label": "Channel Extraction",
+                        "index": 2,
+                        "widget:checkbox": {},
+                        "description": "Activate to extract a specific channel from the binary input image"
+                    },
+                    "CHINDEX": {
+                        "label": "Channel Index",
+                        "index": 3,
+                        "widget:textbox": {},
+                        "description": "Select the channel starting with 1 for the 1st channel"
+                    },
+                    "FILL_HOLES": {
+                        "label": "Fill Holes",
+                        "index": 4,
+                        "widget:checkbox": {},
+                        "description": "Fill holes inside binary mask"
+                    },
+                    "WATERSHED": {
+                        "label": "Watershed to split objects",
+                        "index": 5,
+                        "widget:checkbox": {},
+                        "description": "Activate watershed to split objects"
+                    },
+                    "MINSIZE": {
+                        "label": "Minimum Size",
+                        "index": 6,
+                        "description": "Minimum particle size [pixel]",
+                        "widget:textbox": {}
+                    },
+                    "MAXSIZE": {
+                        "label": "Maximum Size",
+                        "index": 7,
+                        "description": "Maximum particle size [pixel]",
+                        "widget:textbox": {}
+                    },
+                    "MINCIRC": {
+                        "label": "Minimum Circularity",
+                        "index": 8,
+                        "widget:textbox": {},
+                        "description": "Minimum circularity value"
+                    },
+                    "MAXCIRC": {
+                        "label": "Maximum Circularity",
+                        "index": 9,
+                        "widget:textbox": {},
+                        "description": "Maximum circularity value"
+                    },
+                    "TABLE_FORMAT": {
+                        "label": "Output format Results table",
+                        "index": 10,
+                        "widget:dropdown": {
+                            "items": [
+                                {
+                                    "key": "CSV",
+                                    "label": "csv"
+                                },
+                                {
+                                    "key": "TXT",
+                                    "label": "txt"
+                                }
+                            ]
+                        },
+                        "description": "Select file extension for result table"
+                    }
+                },
+                "outputs": {
+                    "PASTACK": {
+                        "label": "Particle Stack",
+                        "index": 1,
+                        "description": "Saved particle stack as OME-TIFF"
+                    },
+                    "RESULTS": {
+                        "label": "Result Table",
+                        "index": 2,
+                        "description": "Result table as CSV file"
+                    }
+                }
+            },
+            "image": "camodules.azurecr.io/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f:16941"
+        },
+        "buildId": 16941,
+        "isOpenSource": true,
+        "codeDownloadUrl": "https://caprodstorage.blob.core.windows.net/public/module_builds/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f/16941.zip",
+        "compliances": []
+    },
+    "draftVersion": {
+        "id": "5e3baf6c-ae6a-4b82-a9ca-468fa64d5541",
+        "moduleId": "cd49fc27-4573-4d4b-8bcb-90b2f83e3c99",
+        "versionNumber": 0,
+        "description": "<h2>Overview</h2><p><br></p><p>The module will analyze the particle in 2d images, meaning it will do it on a slice-per-slice basis (even for a Z-Stack). The image will be read using BioFormats</p><p>&nbsp;</p><h2>How to use&nbsp;</h2><p><br></p><ul><li>Select the input binary image.</li><li>Specify the channel to be extracted</li><li>Selection option to apply watershed to split objects</li><li>Specify Min &amp; Max for particle size and circularity to filter objects</li><li>Exclude particle or objects touching the edge</li><li>Select the desired output format for the result table (TXT or CSV)</li></ul>",
+        "summary": "The module extracts a channel from a binary 2d image and analyzes all the found particles or objects",
+        "image": "https://caprodstorage.blob.core.windows.net/public/module_manager/version_image/20646a42-edb2-4503-a12a-d9b915637c1f/5e3baf6c-ae6a-4b82-a9ca-468fa64d5541?refresh=3b516646-5598-c2ff-df3f-8db9927a39d8",
+        "createdAt": "0001-01-01T00:00:00+00:00",
+        "modifiedAt": "0001-01-01T00:00:00+00:00",
+        "specification": {
+            "spec": {
+                "inputs": {
+                    "IMAGEPATH": {
+                        "type:file": {
+                            "format": [
+                                "ome-tiff",
+                                "czi",
+                                "tiff",
+                                "png",
+                                "jpeg"
+                            ]
+                        }
+                    },
+                    "EXTRACT_CHANNEL": {
+                        "type:choice_binary": null,
+                        "default": false
+                    },
+                    "CHINDEX": {
+                        "type:integer": {
+                            "min": 1,
+                            "max": 32
+                        },
+                        "default": 1
+                    },
+                    "FILL_HOLES": {
+                        "type:choice_binary": null,
+                        "default": true
+                    },
+                    "WATERSHED": {
+                        "type:choice_binary": null,
+                        "default": false
+                    },
+                    "MINSIZE": {
+                        "type:integer": {
+                            "max": 10000000,
+                            "min": 1
+                        },
+                        "default": 1
+                    },
+                    "MAXSIZE": {
+                        "type:integer": {
+                            "max": 10000000,
+                            "min": 1
+                        },
+                        "default": 10000000
+                    },
+                    "MINCIRC": {
+                        "type:number": {
+                            "lower_inclusive": 0,
+                            "upper_inclusive": 1
+                        },
+                        "default": 0
+                    },
+                    "MAXCIRC": {
+                        "type:number": {
+                            "lower_inclusive": 0,
+                            "upper_inclusive": 1
+                        },
+                        "default": 1
+                    },
+                    "EXCLUDE_EDGE": {
+                        "type:choice_binary": null,
+                        "default": false
+                    },
+                    "TABLE_FORMAT": {
+                        "type:choice_single": [
+                            "CSV",
+                            "TXT"
+                        ],
+                        "default": "TXT"
+                    }
+                },
+                "outputs": {
+                    "PASTACK": {
+                        "type:file": {
+                            "format": "ome-tiff"
+                        }
+                    },
+                    "RESULTS": {
+                        "type:file": {
+                            "format": "csv"
+                        }
+                    }
+                }
+            },
+            "ui": {
+                "inputs": {
+                    "IMAGEPATH": {
+                        "label": "Imagefile",
+                        "index": 1,
+                        "widget:none": null,
+                        "description": "Choose the image to be processed"
+                    },
+                    "EXTRACT_CHANNEL": {
+                        "label": "Channel Extraction",
+                        "index": 2,
+                        "widget:checkbox": {},
+                        "description": "Activate to extract a specific channel from the binary input image"
+                    },
+                    "CHINDEX": {
+                        "label": "Channel Index",
+                        "index": 3,
+                        "widget:textbox": {},
+                        "description": "Select the channel starting with 1 for the 1st channel"
+                    },
+                    "FILL_HOLES": {
+                        "label": "Fill Holes",
+                        "index": 4,
+                        "widget:checkbox": {},
+                        "description": "Fill holes inside binary mask"
+                    },
+                    "WATERSHED": {
+                        "label": "Watershed to split objects",
+                        "index": 5,
+                        "widget:checkbox": {},
+                        "description": "Activate watershed to split objects"
+                    },
+                    "MINSIZE": {
+                        "label": "Minimum Size",
+                        "index": 6,
+                        "description": "Minimum particle size [pixel]",
+                        "widget:textbox": {}
+                    },
+                    "MAXSIZE": {
+                        "label": "Maximum Size",
+                        "index": 7,
+                        "description": "Maximum particle size [pixel]",
+                        "widget:textbox": {}
+                    },
+                    "MINCIRC": {
+                        "label": "Minimum Circularity",
+                        "index": 8,
+                        "widget:textbox": {},
+                        "description": "Minimum circularity value"
+                    },
+                    "MAXCIRC": {
+                        "label": "Maximum Circularity",
+                        "index": 9,
+                        "widget:textbox": {},
+                        "description": "Maximum circularity value"
+                    },
+                    "EXCLUDE_EDGE": {
+                        "label": "Exclude edge particles",
+                        "index": 10,
+                        "widget:checkbox": {},
+                        "description": "Exclude particle or objects touching the edge of a image frame."
+                    },
+                    "TABLE_FORMAT": {
+                        "label": "Output format Results table",
+                        "index": 11,
+                        "widget:dropdown": {
+                            "items": [
+                                {
+                                    "key": "CSV",
+                                    "label": "csv"
+                                },
+                                {
+                                    "key": "TXT",
+                                    "label": "txt"
+                                }
+                            ]
+                        },
+                        "description": "Select file extension for result table"
+                    }
+                },
+                "outputs": {
+                    "PASTACK": {
+                        "label": "Particle Stack",
+                        "index": 1,
+                        "description": "Saved particle stack as OME-TIFF"
+                    },
+                    "RESULTS": {
+                        "label": "Result Table",
+                        "index": 2,
+                        "description": "Result table as CSV file"
+                    }
+                }
+            },
+            "image": "camodules.azurecr.io/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f:17056"
+        },
+        "buildId": 17056,
+        "isOpenSource": false,
+        "codeDownloadUrl": null,
+        "compliances": []
+    },
+    "submissions": [
+        {
+            "id": "7ffa727b-28b4-4fb0-a7e4-5109a1358b50",
+            "versionNumber": 1,
+            "state": "Approved",
+            "commentToReviewer": "Particle Analysis 2D",
+            "commentToProducer": "",
+            "isOpenSource": true,
+            "codeDownloadUrl": "https://caprodstorage.blob.core.windows.net/public/module_builds/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f/14379.zip",
+            "createdAt": "2019-06-13T15:21:03.12004+00:00",
+            "modifiedAt": "2019-06-14T08:36:15.657559+00:00",
+            "testFileUrls": [
+                "https://caprodstorage.blob.core.windows.net/public/20646a42-edb2-4503-a12a-d9b915637c1f/test_file01_3CH.ome.tiff",
+                "https://caprodstorage.blob.core.windows.net/public/20646a42-edb2-4503-a12a-d9b915637c1f/test_filecell2D_TH.ome.tiff"
+            ],
+            "compliances": []
+        },
+        {
+            "id": "405000b9-55b0-413d-88cd-7c7fe7e4a6e8",
+            "versionNumber": 2,
+            "state": "Approved",
+            "commentToReviewer": "Particle Analysis",
+            "commentToProducer": "",
+            "isOpenSource": true,
+            "codeDownloadUrl": "https://caprodstorage.blob.core.windows.net/public/module_builds/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f/14464.zip",
+            "createdAt": "2019-06-14T10:52:18.829237+00:00",
+            "modifiedAt": "2019-06-14T10:53:56.437983+00:00",
+            "testFileUrls": [
+                "https://caprodstorage.blob.core.windows.net/public/20646a42-edb2-4503-a12a-d9b915637c1f/test_filecell2D_TH.ome.tiff"
+            ],
+            "compliances": []
+        },
+        {
+            "id": "0c7c9dc1-f9f3-4838-b586-79bfff7de708",
+            "versionNumber": 3,
+            "state": "Approved",
+            "commentToReviewer": "Measure objects in 2D binary image",
+            "commentToProducer": "",
+            "isOpenSource": true,
+            "codeDownloadUrl": "https://caprodstorage.blob.core.windows.net/public/module_builds/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f/14840.zip",
+            "createdAt": "2019-06-24T18:33:18.578911+00:00",
+            "modifiedAt": "2019-06-26T07:58:43.504015+00:00",
+            "testFileUrls": [
+                "https://caprodstorage.blob.core.windows.net/public/20646a42-edb2-4503-a12a-d9b915637c1f/test_fileOsteosarcoma_01_TH.ome.tiff"
+            ],
+            "compliances": []
+        },
+        {
+            "id": "401aeb60-1355-4a2f-83ae-599524645d36",
+            "versionNumber": 4,
+            "state": "Approved",
+            "commentToReviewer": "PA",
+            "commentToProducer": "",
+            "isOpenSource": true,
+            "codeDownloadUrl": "https://caprodstorage.blob.core.windows.net/public/module_builds/particle_analyzer_fiji_e5f51d0e-07a1-4ca0-b868-619fcc2b504f/16941.zip",
+            "createdAt": "2019-08-13T15:27:03.574374+00:00",
+            "modifiedAt": "2019-08-13T15:27:24.182615+00:00",
+            "testFileUrls": [
+                "https://caprodstorage.blob.core.windows.net/public/20646a42-edb2-4503-a12a-d9b915637c1f/test_filecell2D_TH.ome.tiff"
+            ],
+            "compliances": []
+        }
+    ],
+    "shares": [
+        {
+            "id": "daf03b2f-cca3-44f5-93c8-bc613222063b",
+            "userId": "a1c1e9cd-df17-4c8a-8e5b-1d721c2b70a1"
+        }
+    ]
+}

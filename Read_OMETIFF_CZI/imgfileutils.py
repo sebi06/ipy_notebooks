@@ -18,6 +18,7 @@ def create_metadata_dict():
     metadata = {'Directory': None,
                 'Filename': None,
                 'Extension': None,
+                'ImageType': None,
                 'Name': None,
                 'AcqDate': None,
                 'TotalSeries': None,
@@ -27,6 +28,7 @@ def create_metadata_dict():
                 'SizeC': None,
                 'SizeT': None,
                 'DimOrder BF': None,
+                'DimOrder CZI': None,
                 'ObjNA': None,
                 'ObjMag': None,
                 'ObjID': None,
@@ -59,6 +61,7 @@ def get_metadata_ometiff(filename, omemd, series=0):
     metadata['Directory'] = os.path.dirname(filename)
     metadata['Filename'] = os.path.basename(filename)
     metadata['Extension'] = 'ome.tiff'
+    metadata['ImageType'] = 'ometiff'
     metadata['AcqDate'] = omemd.image(series).AcquisitionDate
     metadata['Name'] = omemd.image(series).Name
 
@@ -234,20 +237,40 @@ def create_ipyviewer_czi(array, metadata):
 
     ui = widgets.VBox([s, t, z, c, r])
 
-    def get_TZC_czi(s, t, z, c, r):
-        display_image(array, s=s, t=t, z=z, c=c, vmin=r[0], vmax=r[1])
+    def get_TZC_czi(s_ind, t_ind, z_ind, c_ind, r):
+        display_image(array, metadata,
+                      s=s_ind,
+                      t=t_ind,
+                      z=z_ind,
+                      c=c_ind,
+                      vmin=r[0],
+                      vmax=r[1])
 
-    out = widgets.interactive_output(get_TZC_czi, {'s': s, 't': t, 'z': z, 'c': c, 'r': r})
+    out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
     return out, ui  # , t, z, c, r
 
 
-def display_image(array, imagetype='ometiff', s=0, m=0, t=0, c=0, z=0, vmin=0, vmax=1000):
+def display_image(array, metadata, s=0, m=0, t=0, c=0, z=0, vmin=0, vmax=1000):
 
-    if imagetype == 'ometiff':
+    print('Array Shape: ', array.shape)
+    print('Show plane TZC: ', t, z, c)
+
+    dim_dict = metadata['DimOrder CZI']
+
+    if metadata['ImageType'] == 'ometiff':
         image = array[t - 1, z - 1, c - 1, :, :]
-    if imagetype == 'czi':
-        image = array[s - 1, m - 1, t - 1, z - 1, c - 1, :, :]
+    if metadata['ImageType'] == 'czi':
+        #image = array[s - 1, m - 1, t - 1, z - 1, c - 1, :, :]
+        if metadata['SizeS'] > 1:
+            image = array[s - 1, t - 1, z - 1, c - 1, :, :]
+        if metadata['SizeS'] == 1:
+
+            if dim_dict['T'] == 1:
+                if dim_dict['C'] == 2 and dim_dict['Z'] == 3:
+                    image = array[t - 1, c - 1, z - 1, :, :]
+                if dim_dict['Z'] == 2 and dim_dict['C'] == 3:
+                    image = array[t - 1, c - 1, z - 1, :, :]
 
     # display the labelled image
     fig, ax = plt.subplots(figsize=(10, 10))
@@ -272,6 +295,7 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['Directory'] = os.path.dirname(filename)
     metadata['Filename'] = os.path.basename(filename)
     metadata['Extension'] = 'czi'
+    metadata['ImageType'] = 'czi'
 
     # add axes and shape information
     metadata['Axes'] = czi.axes
@@ -536,7 +560,7 @@ def get_array_czi(filename,
 
     czi.close()
 
-    return cziarray
+    return cziarray, dim_dict
 
 
 def replaceZeroNaN(data, value=0):

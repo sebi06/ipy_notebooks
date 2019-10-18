@@ -18,16 +18,18 @@ import ipywidgets as widgets
 import imgfileutils as imf
 
 
-basefolder = r'/datadisk1/tuxedo/IPython_Notebooks/testdata'
+#basefolder = r'/datadisk1/tuxedo/IPython_Notebooks/testdata'
 #basefolder = r'/home/sebi06/testdata'
+basefolder = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV'
 
 #filename = os.path.join(basefolder, 'Filter_with_Particles_big.ome.tiff')
 #filename = os.path.join(basefolder, 'S=2_T=5_CH=3_CH=2_A2.ome.tiff')
 #filename = os.path.join(basefolder, 'Osteosarcoma_01.ome.tiff')
-#filename = os.path.join(basefolder, 'Filter_with_Particles_big.czi')
+#filename = os.path.join(basefolder, 'Filter_with_Particles_small.czi')
 #filename = os.path.join(basefolder, '8Brains_DAPI_5X_stitched.czi')
-filename = os.path.join(basefolder, r'2x2_SNAP_CH=2_Z=5_T=2.czi')
+#filename = os.path.join(basefolder, r'2x2_SNAP_CH=2_Z=5_T=2.czi')
 #filename = os.path.join(basefolder, 'S=2_T=5_Z=3_CH=2_A2.czi')
+filename = os.path.join(basefolder, r'CellDivision_T=15_Z=20_CH=2_DCV.czi')
 
 
 image_name = os.path.basename(filename)
@@ -47,11 +49,13 @@ if filename.lower().endswith('.czi'):
     print(metadata['Shape'])
     print(metadata['Axes'])
 
-    array = imf.get_array_czi(filename,
-                              cziaxes=metadata['Axes'],
-                              blockindex=0,
-                              sceneindex=0,
-                              replacezero=False)
+    array, dim_dict = imf.get_array_czi(filename,
+                                        cziaxes=metadata['Axes'],
+                                        blockindex=0,
+                                        sceneindex=0,
+                                        replacezero=False)
+
+    metadata['DimOrder CZI'] = dim_dict
     print(array.shape)
 
 print(metadata['Shape'])
@@ -59,9 +63,9 @@ print(metadata['Axes'])
 print(array.shape)
 print(metadata['Extension'])
 
-if metadata['Extension'] == 'ome.tiff':
+if metadata['ImageType'] == 'ometiff':
     ui, out = imf.create_ipyviewer_ometiff(array, metadata)
-if metadata['Extension'] == 'czi':
+if metadata['ImageType'] == 'czi':
     ui, out = imf.create_ipyviewer_czi(array, metadata)
 
 for k, v in metadata.items():
