@@ -1,7 +1,7 @@
 import czifile as zis
 from apeer_ometiff_library import io, processing, omexmlClass
 import os
-#import cziutils as czt
+# import cziutils as czt
 from skimage.external import tifffile
 import ipywidgets as widgets
 from matplotlib import pyplot as plt, cm
@@ -55,7 +55,7 @@ def get_metadata_ometiff(filename, omemd, series=0):
 
     # create dictionary for metadata and get OME-XML data
     metadata = create_metadata_dict()
-    #md = omexmlClass.OMEXML(omexml)
+    # md = omexmlClass.OMEXML(omexml)
 
     # get directory and filename etc.
     metadata['Directory'] = os.path.dirname(filename)
@@ -189,12 +189,28 @@ def create_ipyviewer_ome_tiff(array5d, metadata):
 
 def create_ipyviewer_czi(array, metadata):
 
-    s = widgets.IntSlider(description='Scenes:',
-                          min=1,
-                          max=metadata['SizeS'],
-                          step=1,
-                          value=1,
-                          continuous_update=False)
+    dim_dict = metadata['DimOrder CZI']
+
+    useB = False
+    useS = False
+
+    if 'B' in dim_dict and dim_dict['B'] >= 0:
+        useB = True
+        b = widgets.IntSlider(description='Blocks:',
+                              min=1,
+                              max=metadata['SizeB'],
+                              step=1,
+                              value=1,
+                              continuous_update=False)
+
+    if 'S' in dim_dict and dim_dict['S'] >= 0:
+        useS = True
+        s = widgets.IntSlider(description='Scenes:',
+                              min=1,
+                              max=metadata['SizeS'],
+                              step=1,
+                              value=1,
+                              continuous_update=False)
 
     t = widgets.IntSlider(description='Time:',
                           min=1,
@@ -226,7 +242,9 @@ def create_ipyviewer_czi(array, metadata):
                                continuous_update=False)
 
     # disable slider that are not needed
-    if metadata['SizeS'] == 1:
+    if metadata['SizeB'] == 1 and useB:
+        b.disabled = True
+    if metadata['SizeS'] == 1 and useS:
         s.disabled = True
     if metadata['SizeT'] == 1:
         t.disabled = True
@@ -235,45 +253,149 @@ def create_ipyviewer_czi(array, metadata):
     if metadata['SizeC'] == 1:
         c.disabled = True
 
-    ui = widgets.VBox([s, t, z, c, r])
+    sliders = metadata['Axes'][:-3] + 'R'
 
+    if sliders == 'BTZCR':
+        # if useB and not useS:
+        ui = widgets.VBox([b, t, z, c, r])
+
+        def get_TZC_czi(b_ind, t_ind, z_ind, c_ind, r):
+            display_image(array, metadata, sliders, b=b_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+
+    if sliders == 'BTCZR':
+        # if useB and not useS:
+        ui = widgets.VBox([b, t, c, z, r])
+
+        def get_TZC_czi(b_ind, t_ind, c_ind, z_ind, r):
+            display_image(array, metadata, sliders, b=b_ind, t=t_ind, c=z_ind, z=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+
+    if sliders == 'BSTZCR':
+        # if useB and useS:
+        ui = widgets.VBox([b, s, t, z, c, r])
+
+        def get_TZC_czi(b_ind, s_ind, t_ind, z_ind, c_ind, r):
+            display_image(array, metadata, sliders, b=b_ind, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 's_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+
+    if sliders == 'BSTCZR':
+            # if useB and useS:
+        ui = widgets.VBox([b, s, t, c, z, r])
+
+        def get_TZC_czi(b_ind, s_ind, t_ind, c_ind, z_ind, r):
+            display_image(array, metadata, sliders, b=b_ind, s=s_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 's_ind': s, 't_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
+
+    if sliders == 'STZCR':
+        # if not useB and useS:
+        ui = widgets.VBox([s, t, z, c, r])
+
+        def get_TZC_czi(s_ind, t_ind, z_ind, c_ind, r):
+            display_image(array, metadata, sliders, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+
+    if sliders == 'STCZR':
+        # if not useB and useS:
+        ui = widgets.VBox([s, t, c, z, r])
+
+        def get_TZC_czi(s_ind, t_ind, c_ind, z_ind, r):
+            display_image(array, metadata, sliders, s=s_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 't_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
+
+    if sliders == 'TZCR':
+        # if not useB and not useS:
+        ui = widgets.VBox([t, z, c, r])
+
+        def get_TZC_czi(t_ind, z_ind, c_ind, r):
+            display_image(array, metadata, sliders, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'t_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+
+    if sliders == 'TCZR':
+            # if not useB and not useS:
+        ui = widgets.VBox([t, c, z, r])
+
+        def get_TZC_czi(t_ind, c_ind, z_ind, r):
+            display_image(array, metadata, sliders, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'t_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
+
+    if sliders == 'SCR':
+        # if not useB and not useS:
+        ui = widgets.VBox([s, c, r])
+
+        def get_TZC_czi(s_ind, c_ind, r):
+            display_image(array, metadata, sliders, s=s_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 'c_ind': c, 'r': r})
+
+    """
     def get_TZC_czi(s_ind, t_ind, z_ind, c_ind, r):
-        display_image(array, metadata,
-                      s=s_ind,
-                      t=t_ind,
-                      z=z_ind,
-                      c=c_ind,
-                      vmin=r[0],
-                      vmax=r[1])
+        display_image(array, metadata, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
     out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+    """
 
     return out, ui  # , t, z, c, r
 
 
-def display_image(array, metadata, s=0, m=0, t=0, c=0, z=0, vmin=0, vmax=1000):
+def display_image(array, metadata, sliders, b=0, s=0, m=0, t=0, c=0, z=0, vmin=0, vmax=1000):
 
     print('Array Shape: ', array.shape)
-    print('Show plane TZC: ', t, z, c)
+    print('Axes       : ', metadata['Axes'])
 
     dim_dict = metadata['DimOrder CZI']
 
     if metadata['ImageType'] == 'ometiff':
         image = array[t - 1, z - 1, c - 1, :, :]
+
     if metadata['ImageType'] == 'czi':
-        #image = array[s - 1, m - 1, t - 1, z - 1, c - 1, :, :]
+
+        if sliders == 'BTZCR':
+            image = array[b - 1, t - 1, z - 1, c - 1, :, :]
+
+        if sliders == 'BSTZCR':
+            image = array[b - 1, s - 1, t - 1, z - 1, c - 1, :, :]
+
+        if sliders == 'BSTCZR':
+            image = array[b - 1, s - 1, t - 1, c - 1, z - 1, :, :]
+
+        if sliders == 'STZCR':
+            image = array[s - 1, t - 1, z - 1, c - 1, :, :]
+
+        if sliders == 'STCZR':
+            image = array[s - 1, t - 1, c - 1, z - 1, :, :]
+
+        if sliders == 'TZCR':
+            image = array[t - 1, z - 1, c - 1, :, :]
+
+        if sliders == 'TCZR':
+            image = array[t - 1, c - 1, z - 1, :, :]
+
+        if sliders == 'SCR':
+            image = array[s - 1, c - 1, :, :]
+
+        """
+        # image = array[s - 1, m - 1, t - 1, z - 1, c - 1, :, :]
         if metadata['SizeS'] > 1:
             image = array[s - 1, t - 1, z - 1, c - 1, :, :]
         if metadata['SizeS'] == 1:
-
             if dim_dict['T'] == 1:
                 if dim_dict['C'] == 2 and dim_dict['Z'] == 3:
                     image = array[t - 1, c - 1, z - 1, :, :]
                 if dim_dict['Z'] == 2 and dim_dict['C'] == 3:
                     image = array[t - 1, c - 1, z - 1, :, :]
+        """
 
     # display the labelled image
-    fig, ax = plt.subplots(figsize=(10, 10))
+    fig, ax = plt.subplots(figsize=(12, 12))
     divider = make_axes_locatable(ax)
     cax = divider.append_axes('right', size='5%', pad=0.05)
     im = ax.imshow(image, vmin=vmin, vmax=vmax, interpolation='nearest', cmap=cm.gray)
@@ -321,7 +443,12 @@ def get_metadata_czi(filename, dim2none=False):
     """
 
     metadata['Information'] = metadatadict_czi['ImageDocument']['Metadata']['Information']
-    metadata['PixelType'] = metadata['Information']['Image']['PixelType']
+    try:
+        metadata['PixelType'] = metadata['Information']['Image']['PixelType']
+    except KeyError as e:
+        print('Key not found:', e)
+        metadata['PixelType'] = None
+
     metadata['SizeX'] = np.int(metadata['Information']['Image']['SizeX'])
     metadata['SizeY'] = np.int(metadata['Information']['Image']['SizeY'])
 
@@ -439,62 +566,69 @@ def get_metadata_czi(filename, dim2none=False):
     except:
         metadata['AcqDate'] = None
 
-    metadata['Instrument'] = metadata['Information']['Instrument']
-
-    # get objective data
     try:
-        metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
-    except:
-        metadata['ObjName'] = None
+        metadata['Instrument'] = metadata['Information']['Instrument']
+    except KeyError as e:
+        print('Key not found:', e)
+        metadata['Instrument'] = None
 
-    try:
-        metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
-    except:
-        metadata['ObjImmersion'] = None
+    if metadata['Instrument'] is not None:
 
-    try:
-        metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
-    except:
-        metadata['ObjNA'] = None
+        # get objective data
+        try:
+            metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
+        except:
+            metadata['ObjName'] = None
 
-    try:
-        metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
-    except:
-        metadata['ObjID'] = None
+        try:
+            metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
+        except:
+            metadata['ObjImmersion'] = None
 
-    try:
-        metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
-    except:
-        metadata['TubelensMag'] = None
+        try:
+            metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
+        except:
+            metadata['ObjNA'] = None
 
-    try:
-        metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
-    except:
-        metadata['ObjNominalMag'] = None
+        try:
+            metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
+        except:
+            metadata['ObjID'] = None
 
-    try:
-        metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
-    except:
-        metadata['ObjMag'] = None
+        try:
+            metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
+        except:
+            metadata['TubelensMag'] = None
 
-    # get detector information
-    try:
-        metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
-    except:
-        metadata['DetectorID'] = None
+        try:
+            metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
+        except:
+            metadata['ObjNominalMag'] = None
 
-    try:
-        metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
-    except:
-        metadata['DetectorModel'] = None
+        try:
+            metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
+        except:
+            metadata['ObjMag'] = None
 
-    try:
-        metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
-    except:
-        metadata['DetectorName'] = None
+        # get detector information
+        try:
+            metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
+        except:
+            metadata['DetectorID'] = None
 
-    # delete some key from dict
-    del metadata['Instrument']
+        try:
+            metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
+        except:
+            metadata['DetectorModel'] = None
+
+        try:
+            metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
+        except:
+            metadata['DetectorName'] = None
+
+        # delete some key from dict
+        del metadata['Instrument']
+
     del metadata['Information']
     del metadata['Scaling']
 
@@ -521,17 +655,19 @@ def get_dimorder(dimstring):
 
 
 def get_array_czi(filename,
-                  cziaxes='BSTCZYX0',
-                  blockindex=0,
-                  sceneindex=0,
+                  # blockindex=0,
+                  # sceneindex=0,
                   replacezero=False):
+
+    metadata = get_metadata_czi(filename)
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
     cziarray = czi.asarray()
 
     # get additional information about dimension order etc.
-    dim_dict, dim_list, numvalid_dims = get_dimorder(cziaxes)
+    dim_dict, dim_list, numvalid_dims = get_dimorder(metadata['Axes'])
+    metadata['DimOrder CZI'] = dim_dict
 
     print(dim_dict)
     print(dim_list)
@@ -560,7 +696,37 @@ def get_array_czi(filename,
 
     czi.close()
 
-    return cziarray, dim_dict
+    return cziarray, metadata
+
+
+def get_array_czi_2(filename,
+                    # blockindex=0,
+                    # sceneindex=0,
+                    replacezero=False):
+
+    metadata = get_metadata_czi(filename)
+
+    # get CZI object and read array
+    czi = zis.CziFile(filename)
+    cziarray = czi.asarray()
+
+    # check for H dimension and remove
+    if metadata['Axes'][0] == 'H':
+        metadata['Axes'] = metadata['Axes'][1:]
+        cziarray = np.squeeze(cziarray, axis=0)
+
+    # get additional information about dimension order etc.
+    dim_dict, dim_list, numvalid_dims = get_dimorder(metadata['Axes'])
+    metadata['DimOrder CZI'] = dim_dict
+
+    cziarray = np.squeeze(cziarray, axis=len(metadata['Axes']) - 1)
+
+    if replacezero:
+        cziarray = replaceZeroNaN(cziarray, value=0)
+
+    czi.close()
+
+    return cziarray, metadata
 
 
 def replaceZeroNaN(data, value=0):

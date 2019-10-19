@@ -18,22 +18,24 @@ import ipywidgets as widgets
 import imgfileutils as imf
 
 
-#basefolder = r'/datadisk1/tuxedo/IPython_Notebooks/testdata'
-#basefolder = r'/home/sebi06/testdata'
-basefolder = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV'
+imgdict = {
+    1: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYCZ-Regions-T_CH=2_Z=5_T=3_Tile=2x2.czi',
+    2: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYCZ-Regions-T_CH=2_Z=5_Tile=2x2_T=3.czi',
+    3: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYCZT_CH=2_Z=5_All_CH_per_Slice.czi',
+    4: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYZCT_Z=5_CH=2_Z=5_FullStack_per_CH.czi',
+    5: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYZCT_Z=15_C=2_T=20',
+    6: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/2x2_SNAP_CH=2_Z=5_T=2.czi',
+    7: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/S=2_T=5_Z=3_CH=2_A2.czi',
+    8: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/celldivison/CellDivision_T=10_Z=20_CH=1_DCV.czi',
+    9: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/celldivisonCellDivision_T=15_Z=20_CH=2_DCV.czi',
+    10: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/particles/Filter_with_Particles_small.czi',
+    11: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/Brainslide/BrainProject/8Brains_DAPI_5X_stitched.czi',
+    12: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/Brainslide/BrainProject/DTScan_ID3.czi',
+    13: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.tif',
+    14: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.czi'
+}
 
-#filename = os.path.join(basefolder, 'Filter_with_Particles_big.ome.tiff')
-#filename = os.path.join(basefolder, 'S=2_T=5_CH=3_CH=2_A2.ome.tiff')
-#filename = os.path.join(basefolder, 'Osteosarcoma_01.ome.tiff')
-#filename = os.path.join(basefolder, 'Filter_with_Particles_small.czi')
-#filename = os.path.join(basefolder, '8Brains_DAPI_5X_stitched.czi')
-#filename = os.path.join(basefolder, r'2x2_SNAP_CH=2_Z=5_T=2.czi')
-#filename = os.path.join(basefolder, 'S=2_T=5_Z=3_CH=2_A2.czi')
-filename = os.path.join(basefolder, r'CellDivision_T=15_Z=20_CH=2_DCV.czi')
-
-
-image_name = os.path.basename(filename)
-
+filename = imgdict[14]
 image_name = os.path.basename(filename)
 
 if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif'):
@@ -41,32 +43,17 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
     # Return value is an array of order (T, Z, C, X, Y)
     (array, omexml) = io.read_ometiff(filename)
     metadata = imf.get_metadata(filename, series=0)
+    ui, out = imf.create_ipyviewer_ometiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 
-    metadata = imf.get_metadata(filename)
-
+    array, metadata = imf.get_array_czi_2(filename, replacezero=False)
     print(metadata['Shape'])
     print(metadata['Axes'])
-
-    array, dim_dict = imf.get_array_czi(filename,
-                                        cziaxes=metadata['Axes'],
-                                        blockindex=0,
-                                        sceneindex=0,
-                                        replacezero=False)
-
-    metadata['DimOrder CZI'] = dim_dict
     print(array.shape)
 
-print(metadata['Shape'])
-print(metadata['Axes'])
-print(array.shape)
-print(metadata['Extension'])
-
-if metadata['ImageType'] == 'ometiff':
-    ui, out = imf.create_ipyviewer_ometiff(array, metadata)
-if metadata['ImageType'] == 'czi':
     ui, out = imf.create_ipyviewer_czi(array, metadata)
+
 
 for k, v in metadata.items():
 
