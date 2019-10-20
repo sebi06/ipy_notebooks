@@ -187,7 +187,7 @@ def create_ipyviewer_ome_tiff(array5d, metadata):
     return out, ui  # , t, z, c, r
 
 
-def create_ipyviewer_czi(array, metadata):
+def create_ipyviewer_czi(cziarray, metadata):
 
     dim_dict = metadata['DimOrder CZI']
 
@@ -232,13 +232,13 @@ def create_ipyviewer_czi(array, metadata):
                           step=1,
                           value=1)
 
-    print(array.min(), array.max())
+    print(cziarray.min(), cziarray.max())
 
     r = widgets.IntRangeSlider(description='Display Range:',
-                               min=array.min(),
-                               max=array.max(),
+                               min=cziarray.min(),
+                               max=cziarray.max(),
                                step=1,
-                               value=[array.min(), array.max()],
+                               value=[cziarray.min(), cziarray.max()],
                                continuous_update=False)
 
     # disable slider that are not needed
@@ -256,83 +256,74 @@ def create_ipyviewer_czi(array, metadata):
     sliders = metadata['Axes'][:-3] + 'R'
 
     if sliders == 'BTZCR':
-        # if useB and not useS:
         ui = widgets.VBox([b, t, z, c, r])
 
         def get_TZC_czi(b_ind, t_ind, z_ind, c_ind, r):
-            display_image(array, metadata, sliders, b=b_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, b=b_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
     if sliders == 'BTCZR':
-        # if useB and not useS:
         ui = widgets.VBox([b, t, c, z, r])
 
         def get_TZC_czi(b_ind, t_ind, c_ind, z_ind, r):
-            display_image(array, metadata, sliders, b=b_ind, t=t_ind, c=z_ind, z=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, b=b_ind, t=t_ind, c=z_ind, z=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
     if sliders == 'BSTZCR':
-        # if useB and useS:
         ui = widgets.VBox([b, s, t, z, c, r])
 
         def get_TZC_czi(b_ind, s_ind, t_ind, z_ind, c_ind, r):
-            display_image(array, metadata, sliders, b=b_ind, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, b=b_ind, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 's_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
     if sliders == 'BSTCZR':
-            # if useB and useS:
         ui = widgets.VBox([b, s, t, c, z, r])
 
         def get_TZC_czi(b_ind, s_ind, t_ind, c_ind, z_ind, r):
-            display_image(array, metadata, sliders, b=b_ind, s=s_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, b=b_ind, s=s_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 's_ind': s, 't_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
 
     if sliders == 'STZCR':
-        # if not useB and useS:
         ui = widgets.VBox([s, t, z, c, r])
 
         def get_TZC_czi(s_ind, t_ind, z_ind, c_ind, r):
-            display_image(array, metadata, sliders, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, s=s_ind, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
     if sliders == 'STCZR':
-        # if not useB and useS:
         ui = widgets.VBox([s, t, c, z, r])
 
         def get_TZC_czi(s_ind, t_ind, c_ind, z_ind, r):
-            display_image(array, metadata, sliders, s=s_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, s=s_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 't_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
 
     if sliders == 'TZCR':
-        # if not useB and not useS:
         ui = widgets.VBox([t, z, c, r])
 
         def get_TZC_czi(t_ind, z_ind, c_ind, r):
-            display_image(array, metadata, sliders, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, t=t_ind, z=z_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'t_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
     if sliders == 'TCZR':
-            # if not useB and not useS:
         ui = widgets.VBox([t, c, z, r])
 
         def get_TZC_czi(t_ind, c_ind, z_ind, r):
-            display_image(array, metadata, sliders, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'t_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
 
     if sliders == 'SCR':
-        # if not useB and not useS:
         ui = widgets.VBox([s, c, r])
 
         def get_TZC_czi(s_ind, c_ind, r):
-            display_image(array, metadata, sliders, s=s_ind, c=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, s=s_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 'c_ind': c, 'r': r})
 
@@ -386,6 +377,24 @@ def display_image(array, metadata, sliders, b=0, s=0, m=0, t=0, c=0, z=0, vmin=0
 
 
 def get_metadata_czi(filename, dim2none=False):
+    """
+    # map dimension character to description for CZI files
+    DIMENSIONS = {
+        '0': 'Sample',  # e.g. RGBA
+        'X': 'Width',
+        'Y': 'Height',
+        'C': 'Channel',
+        'Z': 'Slice',  # depth
+        'T': 'Time',
+        'R': 'Rotation',
+        'S': 'Scene',  # contiguous regions of interest in a mosaic image
+        'I': 'Illumination',  # direction
+        'B': 'Block',  # acquisition
+        'M': 'Mosaic',  # index of tile for compositing a scene
+        'H': 'Phase',  # e.g. Airy detector fibers
+        'V': 'View',  # e.g. for SPIM
+    }
+    """
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
@@ -661,10 +670,13 @@ def get_dimorder(dimstring):
     return dims_dict, dimindex_list, numvalid_dims
 
 
-def get_array_czi(filename,
-                  # blockindex=0,
-                  # sceneindex=0,
-                  replacezero=False):
+def get_array_czi_old(filename,
+                      # blockindex=0,
+                      # sceneindex=0,
+                      replacezero=False):
+    """
+    old function - do not use anymore
+    """
 
     metadata = get_metadata_czi(filename)
 
@@ -706,10 +718,9 @@ def get_array_czi(filename,
     return cziarray, metadata
 
 
-def get_array_czi_2(filename,
-                    # blockindex=0,
-                    # sceneindex=0,
-                    replacezero=False):
+def get_array_czi(filename,
+                  replacezero=False,
+                  remove_HDim=True):
 
     metadata = get_metadata_czi(filename)
 
@@ -718,7 +729,7 @@ def get_array_czi_2(filename,
     cziarray = czi.asarray()
 
     # check for H dimension and remove
-    if metadata['Axes'][0] == 'H':
+    if remove_HDim and metadata['Axes'][0] == 'H':
         metadata['Axes'] = metadata['Axes'][1:]
         cziarray = np.squeeze(cziarray, axis=0)
 
