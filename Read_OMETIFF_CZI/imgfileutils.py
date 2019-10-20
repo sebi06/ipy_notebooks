@@ -267,9 +267,9 @@ def create_ipyviewer_czi(cziarray, metadata):
         ui = widgets.VBox([b, t, c, z, r])
 
         def get_TZC_czi(b_ind, t_ind, c_ind, z_ind, r):
-            display_image(cziarray, metadata, sliders, b=b_ind, t=t_ind, c=z_ind, z=c_ind, vmin=r[0], vmax=r[1])
+            display_image(cziarray, metadata, sliders, b=b_ind, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
 
-        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
 
     if sliders == 'BSTZCR':
         ui = widgets.VBox([b, s, t, z, c, r])
@@ -345,6 +345,9 @@ def display_image(array, metadata, sliders, b=0, s=0, m=0, t=0, c=0, z=0, vmin=0
         # add more dimension orders when needed
         if sliders == 'BTZCR':
             image = array[b - 1, t - 1, z - 1, c - 1, :, :]
+
+        if sliders == 'BTCZR':
+            image = array[b - 1, t - 1, c - 1, z - 1, :, :]
 
         if sliders == 'BSTZCR':
             image = array[b - 1, s - 1, t - 1, z - 1, c - 1, :, :]
