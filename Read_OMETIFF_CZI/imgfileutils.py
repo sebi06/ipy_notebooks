@@ -368,7 +368,10 @@ def display_image(array, metadata, sliders, b=0, s=0, m=0, t=0, c=0, z=0, vmin=0
             image = array[t - 1, c - 1, z - 1, :, :]
 
         if sliders == 'SCR':
-            image = array[s - 1, c - 1, :, :]
+            if array.shape[-1] == 3:
+                image = array[s - 1, c - 1, :, :, :]
+            else:
+                image = array[s - 1, c - 1, :, :]
 
     # display the labelled image
     fig, ax = plt.subplots(figsize=(12, 12))
@@ -448,8 +451,7 @@ def get_metadata_czi(filename, dim2none=False):
 
     try:
         metadata['SizeZ'] = np.int(metadata['Information']['Image']['SizeZ'])
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
         if dim2none:
             metadata['SizeZ'] = None
         if not dim2none:
@@ -457,8 +459,7 @@ def get_metadata_czi(filename, dim2none=False):
 
     try:
         metadata['SizeC'] = np.int(metadata['Information']['Image']['SizeC'])
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
         if dim2none:
             metadata['SizeC'] = None
         if not dim2none:
@@ -469,21 +470,18 @@ def get_metadata_czi(filename, dim2none=False):
         try:
             channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
                                             ['Channels']['Channel'][ch]['ShortName'])
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             try:
                 channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
                                                 ['Channels']['Channel']['ShortName'])
-            except KeyError as e:
-                print('Key not found:', e)
+            except:
                 channels.append(str(ch))
 
     metadata['Channels'] = channels
 
     try:
         metadata['SizeT'] = np.int(metadata['Information']['Image']['SizeT'])
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
         if dim2none:
             metadata['SizeT'] = None
         if not dim2none:
@@ -491,8 +489,7 @@ def get_metadata_czi(filename, dim2none=False):
 
     try:
         metadata['SizeM'] = np.int(metadata['Information']['Image']['SizeM'])
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
         if dim2none:
             metadatada['SizeM'] = None
         if not dim2none:
@@ -500,8 +497,8 @@ def get_metadata_czi(filename, dim2none=False):
 
     try:
         metadata['SizeB'] = np.int(metadata['Information']['Image']['SizeB'])
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
+
         if dim2none:
             metadatada['SizeB'] = None
         if not dim2none:
@@ -509,8 +506,7 @@ def get_metadata_czi(filename, dim2none=False):
 
     try:
         metadata['SizeS'] = np.int(metadata['Information']['Image']['SizeS'])
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
         if dim2none:
             metadatada['SizeS'] = None
         if not dim2none:
@@ -525,8 +521,7 @@ def get_metadata_czi(filename, dim2none=False):
         try:
             metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
             metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['XScaleUnit'] = None
             metadata['YScaleUnit'] = None
         try:
@@ -534,17 +529,14 @@ def get_metadata_czi(filename, dim2none=False):
             metadata['ZScale'] = np.round(metadata['ZScale'], 3)
             try:
                 metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
-            except KeyError as e:
-                print('Key not found:', e)
+            except:
                 metadata['ZScaleUnit'] = None
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             if dim2none:
                 metadata['ZScale'] = None
             if not dim2none:
                 metadata['ZScale'] = 1.0
-    except KeyError as e:
-        print('Key not found:', e)
+    except:
         metadata['Scaling'] = None
 
     """
@@ -587,62 +579,53 @@ def get_metadata_czi(filename, dim2none=False):
         # get objective data
         try:
             metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['ObjName'] = None
 
         try:
             metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['ObjImmersion'] = None
 
         try:
             metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['ObjNA'] = None
 
         try:
             metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
-        except KeyError as e:
+        except:
             metadata['ObjID'] = None
 
         try:
             metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['TubelensMag'] = None
 
         try:
             metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
         except KeyError as e:
-            print('Key not found:', e)
             metadata['ObjNominalMag'] = None
 
         try:
             metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['ObjMag'] = None
 
         # get detector information
         try:
             metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['DetectorID'] = None
 
         try:
             metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['DetectorModel'] = None
 
         try:
             metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
-        except KeyError as e:
-            print('Key not found:', e)
+        except:
             metadata['DetectorName'] = None
 
         # delete some key from dict
@@ -740,7 +723,10 @@ def get_array_czi(filename,
     dim_dict, dim_list, numvalid_dims = get_dimorder(metadata['Axes'])
     metadata['DimOrder CZI'] = dim_dict
 
-    cziarray = np.squeeze(cziarray, axis=len(metadata['Axes']) - 1)
+    if cziarray.shape[-1] == 3:
+        pass
+    else:
+        cziarray = np.squeeze(cziarray, axis=len(metadata['Axes']) - 1)
 
     if replacezero:
         cziarray = replaceZeroNaN(cziarray, value=0)
