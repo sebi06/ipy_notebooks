@@ -32,10 +32,13 @@ imgdict = {
     11: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/Brainslide/BrainProject/8Brains_DAPI_5X_stitched.czi',
     12: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/Brainslide/BrainProject/DTScan_ID3.czi',
     13: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.tif',
-    14: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.czi'
+    14: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.czi',
+    15: r'c:\Users\m1srh\Documents\Testdata_Zeiss\AxioScan\kungel_RGB.czi',
+    16: r'c:\Users\m1srh\Documents\Testdata_Zeiss\AxioScan\kungel_RGB_comp2.czi',
+    17: r'C:\Temp\input\Filter_with_Particles_small.ome.tiff'
 }
 
-filename = imgdict[14]
+filename = imgdict[17]
 image_name = os.path.basename(filename)
 
 if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif'):
@@ -43,7 +46,7 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
     # Return value is an array of order (T, Z, C, X, Y)
     (array, omexml) = io.read_ometiff(filename)
     metadata = imf.get_metadata(filename, series=0)
-    ui, out = imf.create_ipyviewer_ometiff(array, metadata)
+    ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 

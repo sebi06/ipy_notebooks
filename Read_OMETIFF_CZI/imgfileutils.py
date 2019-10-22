@@ -29,6 +29,9 @@ def create_metadata_dict():
                 'SizeT': None,
                 'DimOrder BF': None,
                 'DimOrder CZI': None,
+                'Axes': None,
+                'Shape': None,
+                'isRGB': None,
                 'ObjNA': None,
                 'ObjMag': None,
                 'ObjID': None,
@@ -180,7 +183,7 @@ def create_ipyviewer_ome_tiff(array5d, metadata):
     ui = widgets.VBox([t, z, c, r])
 
     def get_TZC_ometiff(t, z, c, r):
-        display_image(array5d, imagetype='ometiff', t=t, z=z, c=c, vmin=r[0], vmax=r[1])
+        display_image(array5d, metadata, 'TZCR', t=t, z=z, c=c, vmin=r[0], vmax=r[1])
 
     out = widgets.interactive_output(get_TZC_ometiff, {'t': t, 'z': z, 'c': c, 'r': r})
 
@@ -344,31 +347,55 @@ def display_image(array, metadata, sliders, b=0, s=0, m=0, t=0, c=0, z=0, vmin=0
 
         # add more dimension orders when needed
         if sliders == 'BTZCR':
-            image = array[b - 1, t - 1, z - 1, c - 1, :, :]
+            if metadata['isRGB']:
+                image = array[b - 1, t - 1, z - 1, c - 1, :, :, :]
+            else:
+                image = array[b - 1, t - 1, z - 1, c - 1, :, :]
 
         if sliders == 'BTCZR':
-            image = array[b - 1, t - 1, c - 1, z - 1, :, :]
+            if metadata['isRGB']:
+                image = array[b - 1, t - 1, c - 1, z - 1, :, :, :]
+            else:
+                image = array[b - 1, t - 1, c - 1, z - 1, :, :]
 
         if sliders == 'BSTZCR':
-            image = array[b - 1, s - 1, t - 1, z - 1, c - 1, :, :]
+            if metadata['isRGB']:
+                image = array[b - 1, s - 1, t - 1, z - 1, c - 1, :, :, :]
+            else:
+                image = array[b - 1, s - 1, t - 1, z - 1, c - 1, :, :]
 
         if sliders == 'BSTCZR':
-            image = array[b - 1, s - 1, t - 1, c - 1, z - 1, :, :]
+            if metadata['isRGB']:
+                image = array[b - 1, s - 1, t - 1, c - 1, z - 1, :, :, :]
+            else:
+                image = array[b - 1, s - 1, t - 1, c - 1, z - 1, :, :]
 
         if sliders == 'STZCR':
-            image = array[s - 1, t - 1, z - 1, c - 1, :, :]
+            if metadata['isRGB']:
+                image = array[s - 1, t - 1, z - 1, c - 1, :, :, :]
+            else:
+                image = array[s - 1, t - 1, z - 1, c - 1, :, :]
 
         if sliders == 'STCZR':
-            image = array[s - 1, t - 1, c - 1, z - 1, :, :]
+            if metadata['isRGB']:
+                image = array[s - 1, t - 1, c - 1, z - 1, :, :, :]
+            else:
+                image = array[s - 1, t - 1, c - 1, z - 1, :, :]
 
         if sliders == 'TZCR':
-            image = array[t - 1, z - 1, c - 1, :, :]
+            if metadata['isRGB']:
+                image = array[t - 1, z - 1, c - 1, :, :, :]
+            else:
+                image = array[t - 1, z - 1, c - 1, :, :]
 
         if sliders == 'TCZR':
-            image = array[t - 1, c - 1, z - 1, :, :]
+            if metadata['isRGB']:
+                image = array[t - 1, c - 1, z - 1, :, :, :]
+            else:
+                image = array[t - 1, c - 1, z - 1, :, :]
 
         if sliders == 'SCR':
-            if array.shape[-1] == 3:
+            if metadata['isRGB']:
                 image = array[s - 1, c - 1, :, :, :]
             else:
                 image = array[s - 1, c - 1, :, :]
@@ -419,6 +446,10 @@ def get_metadata_czi(filename, dim2none=False):
     # add axes and shape information
     metadata['Axes'] = czi.axes
     metadata['Shape'] = czi.shape
+
+    # check if the CZI image is an RGB image depending on the last dimension entry of axes
+    if czi.axes[-1] == 3:
+        metadata['isRGB'] = True
 
     """
     metadata['Experiment'] = metadatadict_czi['ImageDocument']['Metadata']['Experiment']
