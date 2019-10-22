@@ -1,8 +1,8 @@
 #################################################################
 # File       : particleanalyzer.py
-# Version    : 0.2
+# Version    : 0.5
 # Author     : czsrh
-# Date       : 15.01.2019
+# Date       : 22.10.2019
 # Insitution : Carl Zeiss Microscopy GmbH
 #
 #
@@ -14,7 +14,6 @@ from skimage.filters import threshold_otsu, rank
 from skimage.morphology import disk
 from skimage.external import tifffile
 import scipy.ndimage as nd
-#import cv2 as cv
 from skimage.morphology import watershed
 from skimage.feature import peak_local_max
 from scipy import ndimage as ndi
@@ -22,9 +21,9 @@ import numpy as np
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 from skimage.measure import label, regionprops
-#import zisraw as zis
 import czifile as zis
 import xmltodict
+import imgfileutils as imf
 
 
 def classify(value, particleclasses):
@@ -96,57 +95,12 @@ def findhistogrammpeak(values, bins):
     return most_frequent_value
 
 
-def readpaimage(filename,
-                bfrpath=r'c:\Users\m1srh\Documents\GitHub\BioFormatsRead',
-                bfpackage=r'c:\Users\m1srh\Documents\Software\Bioformats\5.9.2\bioformats_package.jar',
-                use_BF=True):
-
-    sys.path.append(bfrpath)
-    import bftools as bf
-
-    if use_BF:
-
-        urlnamespace = 'http://www.openmicroscopy.org/Schemas/OME/2016-06'
-        bf.set_bfpath(bfpackage)
-
-        # Get Omexml
-        omexml = bf.get_OMEXML(filename)
-
-        # get image meta-information
-        MetaInfo = bf.get_relevant_metainfo_wrapper(filename,
-                                                    namespace=urlnamespace,
-                                                    bfpath=bfpackage,
-                                                    showinfo=False,
-                                                    xyorder='YX')
-
-        try:
-            #imgarray, readstate = bf.get_image6d_pylevel(filename, MetaInfo, pylevel=0)
-            imgarray, readstate = bf.get_image6d(filename, sizes, pyramid='single', pylevel=0)
-            arrayshape = np.shape(imgarray)
-        except:
-            arrayshape = []
-            print('Could not read image data into NumPy array.')
-
-        # show relevant image Meta-Information
-        bf.showtypicalmetadata(MetaInfo, namespace=urlnamespace, bfpath=bfpackage)
-        print('Array Shape          : ', arrayshape)
-
-    if not use_BF:
-        print('Using tiffffile to read image ...')
-        imgarray = tifffile.imread(filename)
-
-        # with tifffile. TiffFile(filename) as tif:
-        #    array = tif.asarray()
-        #    omexml = tif[0].image_description
-
-    return imgarray, omexml, MetaInfo
-
-
-def readczi(filename):
+"""
+def readczi(filename, replacezero=True):
 
     czi = zis.CziFile(filename)
     array = czi.asarray()
-    md = czi.metadata
+    md = czi.metadata()
 
     metadata = xmltodict.parse(md)
 
@@ -170,24 +124,37 @@ def readczi(filename):
     except:
         czimd['CustomAttributes'] = None
 
+    czimd['Information'] = metadata['ImageDocument']['Metadata']['Information']
+    czimd['PixelType'] = czimd['Information']['Image']['PixelType']
+    czimd['SizeX'] = czimd['Information']['Image']['SizeX']
+    czimd['SizeY'] = czimd['Information']['Image']['SizeY']
+
     try:
-        czimd['Information'] = metadata['ImageDocument']['Metadata']['Information']
-        czimd['PixelType'] = czimd['Information']['Image']['PixelType']
-        czimd['SizeX'] = czimd['Information']['Image']['SizeX']
-        czimd['SizeY'] = czimd['Information']['Image']['SizeY']
         czimd['SizeZ'] = czimd['Information']['Image']['SizeZ']
+    except:
+        czimd['SizeZ'] = None
+
+    try:
         czimd['SizeC'] = czimd['Information']['Image']['SizeC']
+    except:
+        czimd['SizeC'] = None
+
+    try:
         czimd['SizeT'] = czimd['Information']['Image']['SizeT']
+    except:
+        czimd['SizeT'] = None
+
+    try:
         czimd['SizeM'] = czimd['Information']['Image']['SizeM']
     except:
-        czimd['Information'] = None
+        czimd['SizeM'] = None
 
     try:
         czimd['Scaling'] = metadata['ImageDocument']['Metadata']['Scaling']
         czimd['ScaleX'] = float(czimd['Scaling']['Items']['Distance'][0]['Value']) * 1000000
         czimd['ScaleY'] = float(czimd['Scaling']['Items']['Distance'][1]['Value']) * 1000000
         try:
-            czimd['ScaleZ'] = float(md_scaling['Items']['Distance'][2]['Value']) * 1000000
+            czimd['ScaleZ'] = float(czimd['Scaling']['Items']['Distance'][2]['Value']) * 1000000
         except:
             czimd['ScaleZ'] = None
     except:
@@ -203,7 +170,19 @@ def readczi(filename):
     except:
         czimd['Layers'] = None
 
+    if replacezero:
+        array = replaceZeroNaN(array, value=0)
+
     return array, czimd
+
+
+def replaceZeroNaN(data, value=0):
+
+    data = data.astype('float')
+    data[data == value] = np.nan
+
+    return data
+"""
 
 
 def getmaxinscribedcircle(labelimage):
@@ -310,7 +289,7 @@ def calc_grid(num_all_objects):
     # calculate number of needed columns and rows for particle grid plot
     nc = np.int(np.round(np.sqrt(num_all_objects)))
     nr = nc + 1
-    nrr = np.int(np.round(nr*nc/10, 0) + 2)
+    nrr = np.int(np.round(nr * nc / 10, 0) + 2)
 
     return nrr, nc
 
@@ -334,7 +313,7 @@ def get_particleproperties(region, img_label, image, particlesizeclasses, partic
     perimeter = region.perimeter * scaleXY
     area = region.area * scaleXY**2
 
-    fiberlength = 0.25 * (area + np.sqrt(perimeter**2 - 16*area))
+    fiberlength = 0.25 * (area + np.sqrt(perimeter**2 - 16 * area))
     # check if it was possible to calculate the fiberlength
     if np.isnan(fiberlength):
         fiberlength = 0.0
@@ -352,7 +331,7 @@ def get_particleproperties(region, img_label, image, particlesizeclasses, partic
     properties['FeretMax'] = feretmax
     properties['FeretMin'] = feretmin
     # convert boolean array to 0-1 array
-    properties['LabelImage'] = region.image*1
+    properties['LabelImage'] = region.image * 1
 
     # calculate maximum inscribed circle diameter
     mic_radius = float(getmaxinscribedcircle(properties['LabelImage'])[0])
@@ -361,10 +340,10 @@ def get_particleproperties(region, img_label, image, particlesizeclasses, partic
     # calculate ratio length - width
     if feretmin > 0:
         # calculate the ratio from feretmax and feretmin
-        properties['FeretRatio'] = region.major_axis_length / region.minor_axis_length
+        properties['FeretRatio'] = feretmax / feretmin
 
         # check if this is a fiber using a special criterion
-        if properties['maxMIC'] <= 50 and (properties['FiberLength']/properties['maxMIC']) > 20:
+        if properties['maxMIC'] <= 50 and (properties['FiberLength'] / properties['maxMIC']) > 20:
             properties['IsFiber'] = True
         else:
             properties['IsFiber'] = False
@@ -392,36 +371,7 @@ def find_fibers(objects):
     fiber_ids = []
     for k, v in objects.items():
         if objects[k]['IsFiber']:
-            fiber_ids.append(k)
+            if objects[k]['FiberLength'] > 0.0:
+                fiber_ids.append(k)
 
     return fiber_ids
-
-
-###################################################
-"""
-particleclasses = {'A': [0, 5],
-                   'B': [5, 15],
-                   'C': [15, 25],
-                   'D': [25, 50],
-                   'E': [50, 1000],
-                   'F': [100, 150],
-                   'G': [150, 200],
-                   'H': [200, 400],
-                   'I': [400, 600],
-                   'J': [600, 1000],
-                   'K': [1000, 1500],
-                   'L': [1500, 2000],
-                   'M': [2000, 3000],
-                   'N': [3000, np.inf]
-                   }
-
-areas = [1, 2, 4, 7, 56, 789, 564, 5000]
-cl = []
-
-for a in areas:
-    print(a)
-    out = classify2(a, particleclasses)
-    cl.append(out)
-
-print(cl)
-"""
