@@ -33,10 +33,11 @@ imgdict = {
     12: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/Brainslide/BrainProject/DTScan_ID3.czi',
     13: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.tif',
     14: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.czi',
-    15: r'C:\Users\m1srh\Downloads\kungel_RGB.czi'
+    15: r'C:\Users\m1srh\Downloads\kungel_RGB.czi',
+    16: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Lightsheet_Shoh\Brain_Smartlabel_6x11_Z473_12OL_C0_left_(049).czi'
 }
 
-filename = imgdict[15]
+filename = imgdict[16]
 image_name = os.path.basename(filename)
 
 if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif'):

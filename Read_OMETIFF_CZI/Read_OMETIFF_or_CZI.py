@@ -35,10 +35,13 @@ imgdict = {
     14: r'/datadisk1/tuxedo/testpictures/Fruit_Fly_Brain_3D/Fruit_Fly_Brain.ome.czi',
     15: r'c:\Users\m1srh\Documents\Testdata_Zeiss\AxioScan\kungel_RGB.czi',
     16: r'c:\Users\m1srh\Documents\Testdata_Zeiss\AxioScan\kungel_RGB_comp2.czi',
-    17: r'C:\Temp\input\Filter_with_Particles_small.ome.tiff'
+    17: r'C:\Temp\input\Filter_with_Particles_small.ome.tiff',
+    18: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff',
+    19: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\CellDivision_T=10_Z=15_CH=2_DCV_small_Fiji.ome.tiff',
+    20: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\CellDivision_T=10_Z=15_CH=2_DCV_small.czi'
 }
 
-filename = imgdict[17]
+filename = imgdict[20]
 image_name = os.path.basename(filename)
 
 if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif'):
@@ -46,16 +49,20 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
     # Return value is an array of order (T, Z, C, X, Y)
     (array, omexml) = io.read_ometiff(filename)
     metadata = imf.get_metadata(filename, series=0)
-    ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
+    #ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 
-    array, metadata = imf.get_array_czi_2(filename, replacezero=False)
+    array, metadata = imf.get_array_czi(filename, replacezero=False)
     print(metadata['Shape'])
     print(metadata['Axes'])
     print(array.shape)
 
-    ui, out = imf.create_ipyviewer_czi(array, metadata)
+    #ui, out = imf.create_ipyviewer_czi(array, metadata)
+
+
+# try to configre napari automatiaclly based on metadata
+imf.show_napari(array, metadata)
 
 
 for k, v in metadata.items():
