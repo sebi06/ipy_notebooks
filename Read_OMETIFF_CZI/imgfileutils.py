@@ -7,7 +7,9 @@ from matplotlib import pyplot as plt, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import xmltodict
 import numpy as np
-import napari
+from collections import Counter
+import xml.etree.ElementTree as ET
+#import napari
 
 
 def create_metadata_dict():
@@ -344,6 +346,15 @@ def create_ipyviewer_czi(cziarray, metadata):
 
         out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 's_ind': s, 't_ind': t, 'z_ind': z, 'c_ind': c, 'r': r})
 
+    if sliders == 'BSCR':
+        ui = widgets.VBox([b, s, c, r])
+
+        def get_TZC_czi(b_ind, s_ind, c_ind, r):
+            display_image(cziarray, metadata, sliders, b=b_ind, s=s_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 's_ind': s, 'c_ind': c, 'r': r})
+
+
     if sliders == 'BSTCZR':
         ui = widgets.VBox([b, s, t, c, z, r])
 
@@ -391,6 +402,14 @@ def create_ipyviewer_czi(cziarray, metadata):
             display_image(cziarray, metadata, sliders, s=s_ind, c=c_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'s_ind': s, 'c_ind': c, 'r': r})
+
+    if sliders == 'BTCR':
+        ui = widgets.VBox([b, t, c, r])
+
+        def get_TZC_czi(b_ind, t_ind, c_ind, r):
+            display_image(cziarray, metadata, sliders, b=b_ind, t=t_ind, c=c_ind, vmin=r[0], vmax=r[1])
+
+        out = widgets.interactive_output(get_TZC_czi, {'b_ind': b, 't_ind': t, 'c_ind': c, 'r': r})
 
     ############### Lightsheet data #################
 
@@ -488,6 +507,18 @@ def display_image(array, metadata, sliders, b=0, s=0, m=0, t=0, c=0, z=0, vmin=0
                 image = array[s - 1, c - 1, :, :, :]
             else:
                 image = array[s - 1, c - 1, :, :]
+
+        if sliders == 'BSCR':
+            if metadata['isRGB']:
+                image = array[b -1, s - 1, c - 1, :, :, :]
+            else:
+                image = array[b -1, s - 1, c - 1, :, :]
+
+        if sliders == 'BTCR':
+            if metadata['isRGB']:
+                image = array[b - 1, t - 1, c-1, :, :, :]
+            else:
+                image = array[b - 1, t - 1, c-1, :, :]
 
         ####### lightsheet Data #############
         if sliders == 'VIHRSCTZR':
@@ -657,12 +688,13 @@ def get_metadata_czi(filename, dim2none=False):
             try:
                 metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
             except:
-                metadata['ZScaleUnit'] = None
+                metadata['ZScaleUnit'] = metadata['XScaleUnit']
         except:
             if dim2none:
-                metadata['ZScale'] = None
+                metadata['ZScale'] = metadata['XScaleUnit']
             if not dim2none:
-                metadata['ZScale'] = 1.0
+                # set to isotropic scaling if it was single plane only
+                metadata['ZScale'] = metadata['XScale']
     except:
         metadata['Scaling'] = None
 
@@ -783,54 +815,6 @@ def get_dimorder(dimstring):
     return dims_dict, dimindex_list, numvalid_dims
 
 
-def get_array_czi_old(filename,
-                      # blockindex=0,
-                      # sceneindex=0,
-                      replacezero=False):
-    """
-    old function - do not use anymore
-    """
-
-    metadata = get_metadata_czi(filename)
-
-    # get CZI object and read array
-    czi = zis.CziFile(filename)
-    cziarray = czi.asarray()
-
-    # get additional information about dimension order etc.
-    dim_dict, dim_list, numvalid_dims = get_dimorder(metadata['Axes'])
-    metadata['DimOrder CZI'] = dim_dict
-
-    print(dim_dict)
-    print(dim_list)
-    print(numvalid_dims)
-
-    # determine what to squeeze
-    if dim_dict['B'] < 0 and dim_dict['S'] >= 0:
-        # B does not exist but S does
-        cut = (0, numvalid_dims)
-    if dim_dict['B'] >= 0 and dim_dict['S'] >= 0:
-        # B and S do exist
-        cut = (0, 1, numvalid_dims)
-    if dim_dict['B'] < 0 and dim_dict['S'] < 0:
-        # B and S do not exist
-        cut = (numvalid_dims)
-    if dim_dict['B'] >= 0 and dim_dict['S'] < 0:
-        # B does exist but S does not
-        cut = (0, numvalid_dims)
-
-    print('cut', cut)
-
-    cziarray = np.squeeze(cziarray, axis=cut)
-
-    if replacezero:
-        cziarray = replaceZeroNaN(cziarray, value=0)
-
-    czi.close()
-
-    return cziarray, metadata
-
-
 def get_array_czi(filename,
                   replacezero=False,
                   remove_HDim=True):
@@ -889,7 +873,9 @@ def get_scalefactor(metadata):
     return scalefactors
 
 
-def show_napari(array, metadata, verbose=False):
+def show_napari(array, metadata, verbose=True):
+
+    import napari
 
     # create scalefcator with all ones
     scalefactors = [1] * len(array.shape)
@@ -962,3 +948,127 @@ def show_napari(array, metadata, verbose=False):
             print('Adding Channel: ', chname)
             print('Shape of Array: ', array[slc].shape)
             viewer.add_image(array[slc], name=chname, scale=scalefactors)
+            
+
+def getWellInfofromCZI(wellstring):
+
+    # labeling schemes for plates up-to 1536 wellplate
+    colIDs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+              '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24',
+              '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36',
+              '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', ]
+
+    rowIDs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+              'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF']
+
+    wellOK = wellstring[1:]
+    wellOK = wellOK[:-1]
+    wellOK = re.sub(r'\s+', '', wellOK)
+    welllist = [item for item in wellOK.split(',') if item.strip()]
+
+    cols = []
+    rows = []
+
+    for i in range(0, len(welllist)):
+        wellid_split = re.findall('\d+|\D+', welllist[i])
+        well_ch = wellid_split[0]
+        well_id = wellid_split[1]
+        cols.append(np.int(well_id) - 1)
+        well_id_index = rowIDs.index(well_ch)
+        rows.append(well_id_index)
+
+    welldict = Counter(welllist)
+
+    numwells = len(welllist)
+
+    return welllist, cols, rows, welldict, numwells
+
+
+def getXMLnodes(filename_czi, searchpath, showoutput=False):
+
+    czi = zis.CziFile(filename_czi)
+    tree = czi.metadata.getroottree()
+
+    tag = []
+    attribute = []
+    text = []
+
+    if showoutput:
+        print('Path      : ', searchpath)
+
+    for elem in tree.iterfind(searchpath):
+
+        tag.append(elem.tag)
+        attribute.append(elem.attrib)
+        text.append(elem.text)
+
+        if showoutput:
+            print('Tag       : ', elem.tag)
+            print('Attribute : ', elem.attrib)
+            print('Text      : ', elem.text)
+
+    if showoutput:
+        print('-----------------------------------------------------------------------------------------------')
+
+    return tag, attribute, text
+
+
+def check_for_previewimage(czi):
+
+    att = []
+
+    for attachment in czi.attachments():
+        entry = attachment.attachment_entry
+        print(entry.name)
+        att.append(entry.name)
+
+    has_attimage = False
+
+    if 'SlidePreview' in att:
+        has_attimage = True
+
+    return has_attimage
+    
+    
+def get_numscenes(filename):
+    """
+    Currently the number of scenes cannot be read directly using BioFormats so
+    czifile.py is used to determine the number of scenes.
+    """
+
+    # Read the dimensions of the image stack and their order
+    czi = zis.CziFile(filename)
+
+    # find the index of the "S" inside the dimension string
+    try:
+        si = czi.axes.index("S")
+        numscenes = czi.shape[si]
+    except:
+        # if no scene was found set to 1
+        numscenes = 1
+
+    czi.close()
+
+    return numscenes
+    
+    
+def writexml_czi(filename, xmlsuffix='_CZI_MetaData.xml'):
+
+    # open czi file and get the metadata
+    czi = zis.CziFile(filename)
+    mdczi = czi.metadata()
+    czi.close()
+
+    # change file name 
+    xmlfile = filename.replace('.czi', xmlsuffix)
+    # get tree from string
+    tree = ET.ElementTree(ET.fromstring(mdczi))
+    # write XML file to same folder
+    tree.write(xmlfile, encoding='utf-8', method='xml')
+    
+    return xmlfile
+
+
+
+
+
