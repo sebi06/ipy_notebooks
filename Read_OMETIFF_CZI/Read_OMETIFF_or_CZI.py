@@ -4,7 +4,7 @@ warnings.filterwarnings('ignore')
 warnings.simplefilter('ignore')
 
 import czifile as zis
-from apeer_ometiff_library import io, processing #, omexmlClass
+from apeer_ometiff_library import io, processing  # , omexmlClass
 import os
 from matplotlib import pyplot as plt, cm
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -18,7 +18,7 @@ import ipywidgets as widgets
 import imgfileutils as imf
 
 
-imgdict = {
+imgdict1 = {
     1: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYCZ-Regions-T_CH=2_Z=5_T=3_Tile=2x2.czi',
     2: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYCZ-Regions-T_CH=2_Z=5_Tile=2x2_T=3.czi',
     3: r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/testczi/XYCZT_CH=2_Z=5_All_CH_per_Slice.czi',
@@ -44,7 +44,23 @@ imgdict = {
     23: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\NeuroSpheres_DCV_A635_A488_A405.ome.tiff'
 }
 
-filename = imgdict[23]
+# define your testfiles here
+
+testfolder = r'C:\Users\m1srh\Documents\GitHub\ipy_notebooks\Read_OMETIFF_CZI\testdata'
+
+imgdict2 = {
+    1: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small_green.ome.tiff'),
+    2: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small_red.ome.tiff'),
+    3: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff'),
+    4: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small_green.czi'),
+    5: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small_red.czi'),
+    6: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small.czi')
+}
+
+#filename = imgdict2[6]
+
+filename = imgdict1[21]
+
 image_name = os.path.basename(filename)
 
 if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif'):
@@ -52,7 +68,7 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
     # Return value is an array of order (T, Z, C, X, Y)
     (array, omexml) = io.read_ometiff(filename)
     metadata = imf.get_metadata(filename, series=0)
-    ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
+   #ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 
@@ -61,13 +77,13 @@ if filename.lower().endswith('.czi'):
     print(metadata['Axes'])
     print(array.shape)
 
-    ui, out = imf.create_ipyviewer_czi(array, metadata)
+    #ui, out = imf.create_ipyviewer_czi(array, metadata)
 
 
 # try to configre napari automatiaclly based on metadata
 imf.show_napari(array, metadata)
 
 
-for k, v in metadata.items():
-
-    print(k, v)
+# for k, v in metadata.items():
+#
+#    print(k, v)
