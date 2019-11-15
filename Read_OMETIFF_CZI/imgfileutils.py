@@ -916,7 +916,7 @@ def show_napari(array, metadata, verbose=True):
                 print('Dim PosT : ', posT)
                 print('Dim PosC : ', posC)
                 print('Dim PosZ : ', posZ)
-                print('Scale Factors XYZ: ', scalefactors)
+                print('Scale Factors : ', scalefactors)
         
             # add all channels as layers
             for ch in range(metadata['SizeC']):
@@ -952,7 +952,7 @@ def show_napari(array, metadata, verbose=True):
                 print('Dim PosT : ', posT)
                 print('Dim PosZ : ', posZ)
                 print('Dim PosC : ', posC)
-                print('Scale Factors XYZ: ', scalefactors)
+                print('Scale Factors : ', scalefactors)
             
             # add all channels as layers
             for ch in range(metadata['SizeC']):
