@@ -52,7 +52,8 @@ def create_metadata_dict():
                 'DetectorID': None,
                 'InstrumentID': None,
                 'Channels': [],
-                'ImageIDs': []
+                'ImageIDs': [],
+                'NumPy.dtype': None
                 }
 
     return metadata
@@ -590,6 +591,9 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['Axes'] = czi.axes
     metadata['Shape'] = czi.shape
 
+    # determine pixel type for CZI array
+    metadata['NumPy.dtype'] = czi.dtype
+
     # check if the CZI image is an RGB image depending on the last dimension entry of axes
     if czi.axes[-1] == 3:
         metadata['isRGB'] = True
@@ -934,7 +938,7 @@ def show_napari(array, metadata, verbose=True):
 
                 # actually show the image array
                 print('Scaling Factors: ', scalefactors)
-                viewer.add_image(channel, name=chname, scale=scalefactors)
+                viewer.add_image(channel, name=chname, scale=scalefactors, blending='additive')
             
         if metadata['ImageType'] == 'czi':
 
