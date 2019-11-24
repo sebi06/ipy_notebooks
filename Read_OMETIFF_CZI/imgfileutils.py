@@ -940,6 +940,7 @@ def show_napari(array, metadata,
         scalefactors = [1] * len(array.shape)
 
         # initialize the napari viewer
+        print('Initializing Napari Viewer ...')
         viewer = napari.Viewer()
 
         if metadata['ImageType'] == 'ometiff':
