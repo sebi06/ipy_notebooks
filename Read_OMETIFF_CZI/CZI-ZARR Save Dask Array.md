@@ -69,7 +69,11 @@ def get_czi_array(filename):
     return array
 
 metadata = imf.get_metadata_czi(filenames[0])
+
+# get the required shape of the resulting array - assumption here is that all scenes have the same shape
 array_shape = metadata['Shape'][:-1]
+
+# get the required pixel type for such an array
 array_dtype = metadata['NumPy.dtype']
 print(array_shape)
 print(array_dtype)
@@ -176,7 +180,7 @@ lazy_arrays[0]
 
 
 ```python
-# concatenate first n array
+# concatenate first n array - in this case along the scenes dimension
 full_array = da.concatenate(lazy_arrays[:], axis=dims_dict['S'])
 ```
 
@@ -368,23 +372,27 @@ use_compression = False
 
 # construct new filename for dask array
 zarr_arrayname = os.path.join( os.path.dirname(filenames[0]), 'testwell96.zarr')
-print('Saving ZARR Array to : ', zarr_arrayname)
-                                               
+print('Try to save to : ', zarr_arrayname)
+
 # save to ZARR array if not already existing
 if os.path.exists(zarr_arrayname):
     print('Dask Array already exits. Do not overwrite.')
 if not os.path.exists(zarr_arrayname):
+    
+    print('Saving ZARR Array to : ', zarr_arrayname)
+    
     # write data to disk using dask array
     if use_compression:
         from numcodecs import Blosc
         # save with compression
         full_array.to_zarr(zarr_arrayname, compressor=Blosc(cname='zstd', clevel=3, shuffle=Blosc.BITSHUFFLE))
+    
     if not use_compression:
         # just use the "simple save" method
         full_array.to_zarr(zarr_arrayname)
 ```
 
-    Saving ZARR Array to :  c:\Users\m1srh\Documents\Testdata_Zeiss\Castor\EMBL\96well\testwell96_Single_CZI\testwell96.zarr
+    Try to save to :  c:\Users\m1srh\Documents\Testdata_Zeiss\Castor\EMBL\96well\testwell96_Single_CZI\testwell96.zarr
     Dask Array already exits. Do not overwrite.
     
 
@@ -420,7 +428,7 @@ viewer.add_image(zarr_image[:, :, 1, :, :], name='A488', colormap='green', blend
 
 
 
-    <Image layer 'A488' at 0x248a1259ef0>
+    <Image layer 'A488' at 0x1168a2e7ac8>
 
 
 
