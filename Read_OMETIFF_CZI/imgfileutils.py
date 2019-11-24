@@ -10,6 +10,7 @@ import numpy as np
 from collections import Counter
 import xml.etree.ElementTree as ET
 import napari
+import time
 
 
 def create_metadata_dict():
@@ -430,7 +431,7 @@ def create_ipyviewer_czi(cziarray, metadata):
         out = widgets.interactive_output(get_TZC_czi, {'t_ind': t, 'r': r})
 
     if sliders == 'CR':
-        ui = widgets.VBox(c, r])
+        ui = widgets.VBox([c, r])
 
         def get_TZC_czi(c_ind, r):
             display_image(cziarray, metadata, sliders, c=c_ind, vmin=r[0], vmax=r[1])
@@ -934,6 +935,8 @@ def show_napari(array, metadata,
                 verbose=True):
 
     with napari.gui_qt():
+
+        time.sleep(1)
 
         # create scalefcator with all ones
         scalefactors = [1] * len(array.shape)

@@ -61,7 +61,7 @@ imgdict2 = {
 
 #filename = imgdict2[6]
 
-filename = imgdict1[25]
+filename = imgdict1[14]
 
 image_name = os.path.basename(filename)
 
