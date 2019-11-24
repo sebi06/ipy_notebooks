@@ -76,7 +76,7 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
 
 if filename.lower().endswith('.czi'):
 
-    array, metadata = imf.get_array_czi(filename, replacezero=False)
+    array, metadata, additional_czimd = imf.get_array_czi(filename, replacezero=False)
     print(metadata['Shape'])
     print(metadata['Axes'])
     print(array.shape)

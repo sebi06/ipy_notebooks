@@ -168,12 +168,14 @@ def get_metadata(imagefile, series=0):
         omemd = omexmlClass.OMEXML(omexml)
         md = get_metadata_ometiff(imagefile, omemd, series=series)
 
+        return md
+
     if imgtype == 'czi':
 
         print('Getting CZI Metadata ...')
-        md = get_metadata_czi(imagefile, dim2none=False)
+        md, additional_czimd = get_metadata_czi(imagefile, dim2none=False)
 
-    return md
+        return md, additional_czimd
 
 
 def create_ipyviewer_ome_tiff(array, metadata):
@@ -653,21 +655,23 @@ def get_metadata_czi(filename, dim2none=False):
     if czi.axes[-1] == 3:
         metadata['isRGB'] = True
 
-    try:
-        metadata['Experiment'] = metadatadict_czi['ImageDocument']['Metadata']['Experiment']
-    except:
-        metadata['Experiment'] = None
-    """
-    try:
-        metadata['HardwareSetting'] = metadatadict_czi['ImageDocument']['Metadata']['HardwareSetting']
-    except:
-        metadata['HardwareSetting'] = None
+    additional_czimd = {}
 
     try:
-        metadata['CustomAttributes'] = metadatadict_czi['ImageDocument']['Metadata']['CustomAttributes']
+        additional_czimd['Experiment'] = metadatadict_czi['ImageDocument']['Metadata']['Experiment']
     except:
-        metadata['CustomAttributes'] = None
-    """
+        additional_czimd['Experiment'] = None
+    
+    try:
+        additional_czimd['HardwareSetting'] = metadatadict_czi['ImageDocument']['Metadata']['HardwareSetting']
+    except:
+        additional_czimd['HardwareSetting'] = None
+
+    try:
+        additional_czimd['CustomAttributes'] = metadatadict_czi['ImageDocument']['Metadata']['CustomAttributes']
+    except:
+        additional_czimd['CustomAttributes'] = None
+    
 
     metadata['Information'] = metadatadict_czi['ImageDocument']['Metadata']['Information']
     try:
@@ -770,19 +774,17 @@ def get_metadata_czi(filename, dim2none=False):
     except:
         metadata['Scaling'] = None
 
-    """
     try:
-        metadata['DisplaySetting'] = metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+        additional_czimd['DisplaySetting'] = metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
     except KeyError as e:
         print('Key not found:', e)
-        metadata['DisplaySetting'] = None
+        additional_czimd['DisplaySetting'] = None
 
     try:
-        metadata['Layers'] = metadatadict_czi['ImageDocument']['Metadata']['Layers']
+        additional_czimd['Layers'] = metadatadict_czi['ImageDocument']['Metadata']['Layers']
     except KeyError as e:
         print('Key not found:', e)
-        metadata['Layers'] = None
-    """
+        additional_czimd['Layers'] = None
 
     # try to get software version
     try:
@@ -868,7 +870,7 @@ def get_metadata_czi(filename, dim2none=False):
     # close CZI file
     czi.close()
 
-    return metadata
+    return metadata, additional_czimd
 
 
 def get_dimorder(dimstring):
@@ -889,9 +891,10 @@ def get_dimorder(dimstring):
 
 def get_array_czi(filename,
                   replacezero=False,
-                  remove_HDim=True):
+                  remove_HDim=True,
+                  return_addmd=False):
 
-    metadata = get_metadata_czi(filename)
+    metadata, additional_czimd = get_metadata_czi(filename)
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
@@ -916,7 +919,10 @@ def get_array_czi(filename,
 
     czi.close()
 
-    return cziarray, metadata
+    if return_addmd:
+        return cziarray, metadata, additional_czimd
+    if not return_addmd:
+        return cziarray, metadata
 
 
 def replaceZeroNaN(data, value=0):
