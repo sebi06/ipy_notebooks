@@ -108,13 +108,28 @@ def get_metadata_ometiff(filename, omemd, series=0):
         metadata['ImageIDs'].append(i)
 
     # get information about the instrument and objective
-    metadata['InstrumentID'] = omemd.instrument(series).get_ID()
-    metadata['DetectorModel'] = omemd.instrument(series).Detector.get_Model()
-    metadata['DetectorID'] = omemd.instrument(series).Detector.get_ID()
-    metadata['DetectorModel'] = omemd.instrument(series).Detector.get_Type()
-    metadata['ObjNA'] = omemd.instrument(series).Objective.get_LensNA()
-    metadata['ObjID'] = omemd.instrument(series).Objective.get_ID()
-    metadata['ObjMag'] = omemd.instrument(series).Objective.get_NominalMagnification()
+    try:
+        metadata['InstrumentID'] = omemd.instrument(series).get_ID()
+    except:
+        metadata['InstrumentID'] = None
+
+    try:
+        metadata['DetectorModel'] = omemd.instrument(series).Detector.get_Model()
+        metadata['DetectorID'] = omemd.instrument(series).Detector.get_ID()
+        metadata['DetectorModel'] = omemd.instrument(series).Detector.get_Type()
+    except:
+        metadata['DetectorModel'] = None
+        metadata['DetectorID'] = None
+        metadata['DetectorModel'] = None
+
+    try:
+        metadata['ObjNA'] = omemd.instrument(series).Objective.get_LensNA()
+        metadata['ObjID'] = omemd.instrument(series).Objective.get_ID()
+        metadata['ObjMag'] = omemd.instrument(series).Objective.get_NominalMagnification()
+    except:
+        metadata['ObjNA'] = None
+        metadata['ObjID'] = None
+        metadata['ObjMag'] = None
 
     # get channel names
     for c in range(metadata['SizeC']):
@@ -931,13 +946,13 @@ def get_scalefactor(metadata):
 
 def show_napari(array, metadata,
                 blending='additive',
-                gamma=0.45,
+                gamma=0.85,
                 verbose=True):
 
     with napari.gui_qt():
 
         # create scalefcator with all ones
-        scalefactors = [1] * len(array.shape)
+        scalefactors = [1.0] * len(array.shape)
 
         # initialize the napari viewer
         print('Initializing Napari Viewer ...')
@@ -1053,7 +1068,7 @@ def show_napari(array, metadata,
                 print('Scaling Factors: ', scalefactors)
 
                 # get min-max values for initial scaling
-                clim = [channel.min(), np.round(channel.max() * 0.85)]
+                clim = [array.min(), np.round(array.max() * 0.85)]
                 if verbose:
                     print('Scaling: ', clim)
                 viewer.add_image(array,

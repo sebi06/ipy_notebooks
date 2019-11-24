@@ -12,7 +12,6 @@ from skimage.viewer import ImageViewer
 import skimage.io
 import matplotlib.colors as colors
 import numpy as np
-#from skimage.external import tifffile
 import ipywidgets as widgets
 
 import imgfileutils as imf
@@ -43,7 +42,10 @@ imgdict1 = {
     22: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\NeuroSpheres_DCV_A635_A488_A405.czi',
     23: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\NeuroSpheres_DCV_A635_A488_A405.ome.tiff',
     24: r'E:\tuxedo\testpictures\Testdata_Zeiss\em\FIB_Stack.czi',
-    25: r'E:\tuxedo\testpictures\Testdata_Zeiss\celldivison\CellDivision_T=15_Z=20_CH=2_DCV.czi'
+    25: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Cryo\FIB_Stack.czi',
+    26: r'E:\tuxedo\testpictures\Testdata_Zeiss\celldivison\CellDivision_T=15_Z=20_CH=2_DCV.czi',
+    27: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Fruit_Fly_Brain\Fruit_Fly_Brain_3D.czi',
+    28: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Fruit_Fly_Brain\Fruit_Fly_Brain_3D.ome.tiff'
 }
 
 # define your testfiles here
@@ -61,7 +63,7 @@ imgdict2 = {
 
 #filename = imgdict2[6]
 
-filename = imgdict1[14]
+filename = imgdict1[28]
 
 image_name = os.path.basename(filename)
 
@@ -81,6 +83,7 @@ if filename.lower().endswith('.czi'):
 
     #ui, out = imf.create_ipyviewer_czi(array, metadata)
 
+print('Array Shape: ', array.shape)
 
 # try to configure napari automatically based on metadata
 imf.show_napari(array, metadata)
