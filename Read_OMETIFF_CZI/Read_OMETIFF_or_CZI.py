@@ -41,7 +41,9 @@ imgdict1 = {
     20: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\CellDivision_T=10_Z=15_CH=2_DCV_small_Fiji.ome.tiff',
     21: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\CellDivision_T=15_Z=20_CH=2_DCV.czi',
     22: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\NeuroSpheres_DCV_A635_A488_A405.czi',
-    23: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\NeuroSpheres_DCV_A635_A488_A405.ome.tiff'
+    23: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\Z-Stack_DCV\NeuroSpheres_DCV_A635_A488_A405.ome.tiff',
+    24: r'E:\tuxedo\testpictures\Testdata_Zeiss\em\FIB_Stack.czi',
+    25: r'E:\tuxedo\testpictures\Testdata_Zeiss\celldivison\CellDivision_T=15_Z=20_CH=2_DCV.czi'
 }
 
 # define your testfiles here
@@ -59,7 +61,7 @@ imgdict2 = {
 
 #filename = imgdict2[6]
 
-filename = imgdict1[21]
+filename = imgdict1[14]
 
 image_name = os.path.basename(filename)
 
@@ -68,7 +70,7 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
     # Return value is an array of order (T, Z, C, X, Y)
     (array, omexml) = io.read_ometiff(filename)
     metadata = imf.get_metadata(filename, series=0)
-   #ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
+    #ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 
@@ -80,7 +82,7 @@ if filename.lower().endswith('.czi'):
     #ui, out = imf.create_ipyviewer_czi(array, metadata)
 
 
-# try to configre napari automatiaclly based on metadata
+# try to configure napari automatically based on metadata
 imf.show_napari(array, metadata)
 
 
