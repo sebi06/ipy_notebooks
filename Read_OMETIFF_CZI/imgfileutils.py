@@ -553,13 +553,13 @@ def display_image(array, metadata, sliders,
                 image = array[z - 1, :, :, :]
             else:
                 image = array[z - 1, :, :]
-                
+
         if sliders == 'TR':
             if metadata['isRGB']:
                 image = array[t - 1, :, :, :]
             else:
                 image = array[t - 1, :, :]
-                
+
         if sliders == 'CR':
             if metadata['isRGB']:
                 image = array[c - 1, :, :, :]
@@ -936,8 +936,6 @@ def show_napari(array, metadata,
 
     with napari.gui_qt():
 
-        time.sleep(1)
-
         # create scalefcator with all ones
         scalefactors = [1] * len(array.shape)
 
@@ -978,9 +976,15 @@ def show_napari(array, metadata,
 
                 # actually show the image array
                 print('Scaling Factors: ', scalefactors)
+
+                # get min-max values for initial scaling
+                clim = [channel.min(), np.round(channel.max() * 0.85)]
+                if verbose:
+                    print('Scaling: ', clim)
                 viewer.add_image(channel,
                                  name=chname,
                                  scale=scalefactors,
+                                 contrast_limits=clim,
                                  blending=blending,
                                  gamma=gamma)
 
@@ -1002,28 +1006,27 @@ def show_napari(array, metadata,
                 print('Dim PosC : ', posC)
                 print('Scale Factors : ', scalefactors)
 
-            
             if metadata['SizeC'] > 1:
                 # add all channels as layers
                 for ch in range(metadata['SizeC']):
-    
+
                     try:
                         # get the channel name
                         chname = metadata['Channels'][ch]
                     except:
                         # or use CH1 etc. as string for the name
                         chname = 'CH' + str(ch + 1)
-    
+
                     # cut out channel
                     channel = array.take(ch, axis=posC)
                     print('Shape Channel : ', ch, channel.shape)
-    
+
                     # actually show the image array
                     print('Adding Channel: ', chname)
                     print('Scaling Factors: ', scalefactors)
-                    
+
                     # get min-max values for initial scaling
-                    clim = [channel.min(), np.round(channel.max()*0.85)]
+                    clim = [channel.min(), np.round(channel.max() * 0.85)]
                     if verbose:
                         print('Scaling: ', clim)
                     viewer.add_image(channel,
@@ -1032,30 +1035,32 @@ def show_napari(array, metadata,
                                      contrast_limits=clim,
                                      blending=blending,
                                      gamma=gamma)
-                    
+
             if metadata['SizeC'] == 1:
-                    
-                    ch = 0
-                    # just add one channel as a layer
-                    try:
+
+                ch = 0
+                # just add one channel as a layer
+                try:
                         # get the channel name
-                        chname = metadata['Channels'][ch]
-                    except:
-                        # or use CH1 etc. as string for the name
-                        chname = 'CH' + str(ch + 1)
-    
-                    # actually show the image array
-                    print('Adding Channel: ', chname)
-                    print('Scaling Factors: ', scalefactors)
-    
-                    # get min-max values for initial scaling
-                    clim = [channel.min(), np.round(channel.max()*0.85)]
-                    if verbose:
-                        print('Scaling: ', clim)
-                    viewer.add_image(array,
-                                     name=chname,
-                                     scale=scalefactors,
-                                     contrast_limits=clim)
+                    chname = metadata['Channels'][ch]
+                except:
+                    # or use CH1 etc. as string for the name
+                    chname = 'CH' + str(ch + 1)
+
+                # actually show the image array
+                print('Adding Channel: ', chname)
+                print('Scaling Factors: ', scalefactors)
+
+                # get min-max values for initial scaling
+                clim = [channel.min(), np.round(channel.max() * 0.85)]
+                if verbose:
+                    print('Scaling: ', clim)
+                viewer.add_image(array,
+                                 name=chname,
+                                 scale=scalefactors,
+                                 contrast_limits=clim,
+                                 blending=blending,
+                                 gamma=gamma)
 
 
 def getWellInfofromCZI(wellstring):
