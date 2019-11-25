@@ -61,9 +61,8 @@ imgdict2 = {
     6: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small.czi')
 }
 
-#filename = imgdict2[6]
-
-filename = imgdict1[28]
+filename = imgdict2[6]
+#filename = imgdict1[28]
 
 image_name = os.path.basename(filename)
 
@@ -76,7 +75,7 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
 
 if filename.lower().endswith('.czi'):
 
-    array, metadata, additional_czimd = imf.get_array_czi(filename, replacezero=False)
+    array, metadata = imf.get_array_czi(filename, replacezero=False)
     print(metadata['Shape'])
     print(metadata['Axes'])
     print(array.shape)
