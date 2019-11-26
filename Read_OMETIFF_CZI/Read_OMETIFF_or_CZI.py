@@ -70,12 +70,12 @@ if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif
 
     # Return value is an array of order (T, Z, C, X, Y)
     (array, omexml) = io.read_ometiff(filename)
-    metadata = imf.get_metadata(filename, series=0)
+    metadata, add_metadata = imf.get_metadata(filename, series=0)
     #ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 
-    array, metadata = imf.get_array_czi(filename, replacezero=False)
+    array, metadata, add_metadata = imf.get_array_czi(filename, replacezero=False)
     print(metadata['Shape'])
     print(metadata['Axes'])
     print(array.shape)

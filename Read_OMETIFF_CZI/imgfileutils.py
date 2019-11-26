@@ -158,7 +158,7 @@ def get_metadata(imagefile, series=0):
     imgtype = get_imgtype(imagefile)
     print('Image Type: ', imgtype)
     md = None
-    additional_czimd = None
+    additional_md = None
 
     if imgtype == 'ometiff':
 
@@ -169,15 +169,13 @@ def get_metadata(imagefile, series=0):
         omemd = omexmlClass.OMEXML(omexml)
         md = get_metadata_ometiff(imagefile, omemd, series=series)
 
-        return md
-
     if imgtype == 'czi':
 
         print('Getting CZI Metadata ...')
         md = get_metadata_czi(imagefile, dim2none=False)
-        additional_czimd = get_additional_metadata_czi(imagefile)
+        additional_md = get_additional_metadata_czi(imagefile)
 
-        return md, additional_czimd
+    return md, additional_md
 
 
 def create_ipyviewer_ome_tiff(array, metadata):
@@ -910,6 +908,7 @@ def get_array_czi(filename,
                   return_addmd=False):
 
     metadata = get_metadata_czi(filename)
+    additional_metadata = get_additional_metadata_czi(filename)
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
@@ -934,7 +933,7 @@ def get_array_czi(filename,
 
     czi.close()
 
-    return cziarray, metadata
+    return cziarray, metadata, additional_metadata
 
 
 def replaceZeroNaN(data, value=0):
