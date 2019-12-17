@@ -1,3 +1,7 @@
+# this can be used to switch on/off warnings
+import warnings
+warnings.filterwarnings('ignore')
+warnings.simplefilter('ignore')
 import czifile as zis
 from apeer_ometiff_library import io, processing, omexmlClass
 import os
@@ -8,7 +12,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import xmltodict
 import numpy as np
 from collections import Counter
-import xml.etree.ElementTree as ET
+#import xml.etree.ElementTree as ET
+from lxml import etree as ET
 import napari
 import time
 
@@ -1207,9 +1212,35 @@ def writexml_czi(filename, xmlsuffix='_CZI_MetaData.xml'):
 
     # change file name
     xmlfile = filename.replace('.czi', xmlsuffix)
+    
     # get tree from string
     tree = ET.ElementTree(ET.fromstring(mdczi))
+    
     # write XML file to same folder
     tree.write(xmlfile, encoding='utf-8', method='xml')
+
+    return xmlfile
+
+
+def writexml_ometiff(filename, xmlsuffix='_OMETIFF_MetaData.xml'):
+
+    if filename.lower().endswith('.ome.tiff'):
+        ext = '.ome.tiff'
+    if filename.lower().endswith('.ome.tif'):
+        ext = '.ome.tif'
+
+    with tifffile.TiffFile(filename) as tif:
+            #omexml_string = tif[0].image_description.decode('utf-8')
+            omexml_string = tif[0].image_description
+
+    # get tree from string
+    #tree = ET.ElementTree(ET.fromstring(omexml_string.encode('utf-8')))
+    tree = ET.ElementTree(ET.fromstring(omexml_string))
+
+    # change file name
+    xmlfile = filename.replace(ext, xmlsuffix)
+    
+    tree.write(xmlfile, encoding='utf-8', method='xml', pretty_print=True)
+    print('Created OME-XML file for testdata: ', filename)
 
     return xmlfile
