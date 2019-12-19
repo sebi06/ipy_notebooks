@@ -1131,35 +1131,6 @@ def show_napari(array, metadata,
                                  gamma=gamma)
 
 
-def getXMLnodes(filename_czi, searchpath, showoutput=False):
-
-    czi = zis.CziFile(filename_czi)
-    tree = czi.metadata.getroottree()
-
-    tag = []
-    attribute = []
-    text = []
-
-    if showoutput:
-        print('Path      : ', searchpath)
-
-    for elem in tree.iterfind(searchpath):
-
-        tag.append(elem.tag)
-        attribute.append(elem.attrib)
-        text.append(elem.text)
-
-        if showoutput:
-            print('Tag       : ', elem.tag)
-            print('Attribute : ', elem.attrib)
-            print('Text      : ', elem.text)
-
-    if showoutput:
-        print('-----------------------------------------------------------------------------------------------')
-
-    return tag, attribute, text
-
-
 def check_for_previewimage(czi):
 
     att = []
@@ -1175,28 +1146,6 @@ def check_for_previewimage(czi):
         has_attimage = True
 
     return has_attimage
-
-
-def get_numscenes(filename):
-    """
-    Currently the number of scenes cannot be read directly using BioFormats so
-    czifile.py is used to determine the number of scenes.
-    """
-
-    # Read the dimensions of the image stack and their order
-    czi = zis.CziFile(filename)
-
-    # find the index of the "S" inside the dimension string
-    try:
-        si = czi.axes.index("S")
-        numscenes = czi.shape[si]
-    except:
-        # if no scene was found set to 1
-        numscenes = 1
-
-    czi.close()
-
-    return numscenes
 
 
 def writexml_czi(filename, xmlsuffix='_CZI_MetaData.xml'):
