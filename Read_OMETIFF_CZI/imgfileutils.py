@@ -2,6 +2,7 @@
 import warnings
 warnings.filterwarnings('ignore')
 warnings.simplefilter('ignore')
+
 import czifile as zis
 from apeer_ometiff_library import io, processing, omexmlClass
 import os
@@ -16,6 +17,22 @@ from collections import Counter
 from lxml import etree as ET
 import napari
 import time
+import re
+
+
+def get_imgtype(imagefile):
+
+    imgtype = None
+
+    if imagefile.lower().endswith('.ome.tiff') or imagefile.lower().endswith('.ome.tif'):
+        # it is on OME-TIFF based on the file extension ... :-)
+        imgtype = 'ometiff'
+
+    if imagefile.lower().endswith('.czi'):
+        # it is on CZI based on the file extension ... :-)
+        imgtype = 'czi'
+
+    return imgtype
 
 
 def create_metadata_dict():
@@ -63,6 +80,31 @@ def create_metadata_dict():
                 }
 
     return metadata
+
+
+def get_metadata(imagefile, series=0):
+
+    imgtype = get_imgtype(imagefile)
+    print('Image Type: ', imgtype)
+    md = None
+    additional_md = None
+
+    if imgtype == 'ometiff':
+
+        with tifffile.TiffFile(imagefile) as tif:
+            omexml = tif[0].image_description.decode('utf-8')
+
+        print('Getting OME-TIFF Metadata ...')
+        omemd = omexmlClass.OMEXML(omexml)
+        md = get_metadata_ometiff(imagefile, omemd, series=series)
+
+    if imgtype == 'czi':
+
+        print('Getting CZI Metadata ...')
+        md = get_metadata_czi(imagefile, dim2none=False)
+        additional_md = get_additional_metadata_czi(imagefile)
+
+    return md, additional_md
 
 
 def get_metadata_ometiff(filename, omemd, series=0):
@@ -143,44 +185,308 @@ def get_metadata_ometiff(filename, omemd, series=0):
     return metadata
 
 
-def get_imgtype(imagefile):
+def get_metadata_czi(filename, dim2none=False):
+    """
+    # map dimension character to description for CZI files
+    DIMENSIONS = {
+        '0': 'Sample',  # e.g. RGBA
+        'X': 'Width',
+        'Y': 'Height',
+        'C': 'Channel',
+        'Z': 'Slice',  # depth
+        'T': 'Time',
+        'R': 'Rotation',
+        'S': 'Scene',  # contiguous regions of interest in a mosaic image
+        'I': 'Illumination',  # direction
+        'B': 'Block',  # acquisition
+        'M': 'Mosaic',  # index of tile for compositing a scene
+        'H': 'Phase',  # e.g. Airy detector fibers
+        'V': 'View',  # e.g. for SPIM
+    }
+    """
 
-    imgtype = None
+    # get CZI object and read array
+    czi = zis.CziFile(filename)
+    #mdczi = czi.metadata()
 
-    if imagefile.lower().endswith('.ome.tiff') or imagefile.lower().endswith('.ome.tif'):
-        # it is on OME-TIFF basd on the file extension ... :-)
-        imgtype = 'ometiff'
+    # parse the XML into a dictionary
+    metadatadict_czi = xmltodict.parse(czi.metadata())
+    metadata = create_metadata_dict()
 
-    if imagefile.lower().endswith('.czi'):
-        # it is on CZI basd on the file extension ... :-)
-        imgtype = 'czi'
+    out = metadatadict_czi['ImageDocument']['Metadata']['Information']['Image']['Dimensions']['S']['Scenes']
 
-    return imgtype
+    # get directory and filename etc.
+    metadata['Directory'] = os.path.dirname(filename)
+    metadata['Filename'] = os.path.basename(filename)
+    metadata['Extension'] = 'czi'
+    metadata['ImageType'] = 'czi'
+
+    # add axes and shape information
+    metadata['Axes'] = czi.axes
+    metadata['Shape'] = czi.shape
+
+    # determine pixel type for CZI array
+    metadata['NumPy.dtype'] = czi.dtype
+
+    # check if the CZI image is an RGB image depending on the last dimension entry of axes
+    if czi.axes[-1] == 3:
+        metadata['isRGB'] = True
+
+    metadata['Information'] = metadatadict_czi['ImageDocument']['Metadata']['Information']
+    try:
+        metadata['PixelType'] = metadata['Information']['Image']['PixelType']
+    except KeyError as e:
+        print('Key not found:', e)
+        metadata['PixelType'] = None
+
+    metadata['SizeX'] = np.int(metadata['Information']['Image']['SizeX'])
+    metadata['SizeY'] = np.int(metadata['Information']['Image']['SizeY'])
+
+    try:
+        metadata['SizeZ'] = np.int(metadata['Information']['Image']['SizeZ'])
+    except:
+        if dim2none:
+            metadata['SizeZ'] = None
+        if not dim2none:
+            metadata['SizeZ'] = 1
+
+    try:
+        metadata['SizeC'] = np.int(metadata['Information']['Image']['SizeC'])
+    except:
+        if dim2none:
+            metadata['SizeC'] = None
+        if not dim2none:
+            metadata['SizeC'] = 1
+
+    channels = []
+    for ch in range(metadata['SizeC']):
+        try:
+            channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+                                            ['Channels']['Channel'][ch]['ShortName'])
+        except:
+            try:
+                channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+                                                ['Channels']['Channel']['ShortName'])
+            except:
+                channels.append(str(ch))
+
+    metadata['Channels'] = channels
+
+    try:
+        metadata['SizeT'] = np.int(metadata['Information']['Image']['SizeT'])
+    except:
+        if dim2none:
+            metadata['SizeT'] = None
+        if not dim2none:
+            metadata['SizeT'] = 1
+
+    try:
+        metadata['SizeM'] = np.int(metadata['Information']['Image']['SizeM'])
+    except:
+        if dim2none:
+            metadatada['SizeM'] = None
+        if not dim2none:
+            metadata['SizeM'] = 1
+
+    try:
+        metadata['SizeB'] = np.int(metadata['Information']['Image']['SizeB'])
+    except:
+
+        if dim2none:
+            metadatada['SizeB'] = None
+        if not dim2none:
+            metadata['SizeB'] = 1
+
+    try:
+        metadata['SizeS'] = np.int(metadata['Information']['Image']['SizeS'])
+    except:
+        if dim2none:
+            metadatada['SizeS'] = None
+        if not dim2none:
+            metadata['SizeS'] = 1
+
+    try:
+        metadata['Scaling'] = metadatadict_czi['ImageDocument']['Metadata']['Scaling']
+        metadata['XScale'] = float(metadata['Scaling']['Items']['Distance'][0]['Value']) * 1000000
+        metadata['YScale'] = float(metadata['Scaling']['Items']['Distance'][1]['Value']) * 1000000
+        metadata['XScale'] = np.round(metadata['XScale'], 3)
+        metadata['YScale'] = np.round(metadata['YScale'], 3)
+        try:
+            metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
+            metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
+        except:
+            metadata['XScaleUnit'] = None
+            metadata['YScaleUnit'] = None
+        try:
+            metadata['ZScale'] = float(metadata['Scaling']['Items']['Distance'][2]['Value']) * 1000000
+            metadata['ZScale'] = np.round(metadata['ZScale'], 3)
+            try:
+                metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
+            except:
+                metadata['ZScaleUnit'] = metadata['XScaleUnit']
+        except:
+            if dim2none:
+                metadata['ZScale'] = metadata['XScaleUnit']
+            if not dim2none:
+                # set to isotropic scaling if it was single plane only
+                metadata['ZScale'] = metadata['XScale']
+    except:
+        metadata['Scaling'] = None
+
+    # try to get software version
+    try:
+        metadata['SW-Name'] = metadata['Information']['Application']['Name']
+        metadata['SW-Version'] = metadata['Information']['Application']['Version']
+    except KeyError as e:
+        print('Key not found:', e)
+        metadata['SW-Name'] = None
+        metadata['SW-Version'] = None
+
+    try:
+        metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
+    except KeyError as e:
+        print('Key not found:', e)
+        metadata['AcqDate'] = None
+
+    try:
+        metadata['Instrument'] = metadata['Information']['Instrument']
+    except KeyError as e:
+        print('Key not found:', e)
+        metadata['Instrument'] = None
+
+    if metadata['Instrument'] is not None:
+
+        # get objective data
+        try:
+            metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
+        except:
+            metadata['ObjName'] = None
+
+        try:
+            metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
+        except:
+            metadata['ObjImmersion'] = None
+
+        try:
+            metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
+        except:
+            metadata['ObjNA'] = None
+
+        try:
+            metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
+        except:
+            metadata['ObjID'] = None
+
+        try:
+            metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
+        except:
+            metadata['TubelensMag'] = None
+
+        try:
+            metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
+        except KeyError as e:
+            metadata['ObjNominalMag'] = None
+
+        try:
+            metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
+        except:
+            metadata['ObjMag'] = None
+
+        # get detector information
+        try:
+            metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
+        except:
+            metadata['DetectorID'] = None
+
+        try:
+            metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
+        except:
+            metadata['DetectorModel'] = None
+
+        try:
+            metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
+        except:
+            metadata['DetectorName'] = None
+
+        # delete some key from dict
+        del metadata['Instrument']
+
+    # check for well information
+
+    metadata['Well_ArrayNames'] = []
+    metadata['Well_Indices'] = []
+    metadata['Well_PositionNames'] = []
+    metadata['Well_ColId'] = []
+    metadata['Well_RowId'] = []
+    metadata['WellCounter'] = None
+
+    try:
+        allscenes = metadata['Information']['Image']['Dimensions']['S']['Scenes']['Scene']
+        for s in range(metadata['SizeS']):
+            well = allscenes[s]
+            metadata['Well_ArrayNames'].append(well['ArrayName'])
+            metadata['Well_Indices'].append(well['@Index'])
+            metadata['Well_PositionNames'].append(well['@Name'])
+            metadata['Well_ColId'].append(well['Shape']['ColumnIndex'])
+            metadata['Well_RowId'].append(well['Shape']['RowIndex'])
+
+        # count the content of the list, e.g. how many time a certain well was detected
+        metadata['WellCounter'] = Counter(metadata['Well_ArrayNames'])
+        # count the number of different wells
+        metadata['NumWells'] = len(metadata['WellCounter'].keys())
+
+    except KeyError as e:
+        print('Key not found:', e)
+
+    del metadata['Information']
+    del metadata['Scaling']
+
+    # close CZI file
+    czi.close()
+
+    return metadata
 
 
-def get_metadata(imagefile, series=0):
+def get_additional_metadata_czi(filename):
 
-    imgtype = get_imgtype(imagefile)
-    print('Image Type: ', imgtype)
-    md = None
-    additional_md = None
+    # get CZI object and read array
+    czi = zis.CziFile(filename)
 
-    if imgtype == 'ometiff':
+    # parse the XML into a dictionary
+    metadatadict_czi = xmltodict.parse(czi.metadata())
+    additional_czimd = {}
 
-        with tifffile.TiffFile(imagefile) as tif:
-            omexml = tif[0].image_description.decode('utf-8')
+    try:
+        additional_czimd['Experiment'] = metadatadict_czi['ImageDocument']['Metadata']['Experiment']
+    except:
+        additional_czimd['Experiment'] = None
 
-        print('Getting OME-TIFF Metadata ...')
-        omemd = omexmlClass.OMEXML(omexml)
-        md = get_metadata_ometiff(imagefile, omemd, series=series)
+    try:
+        additional_czimd['HardwareSetting'] = metadatadict_czi['ImageDocument']['Metadata']['HardwareSetting']
+    except:
+        additional_czimd['HardwareSetting'] = None
 
-    if imgtype == 'czi':
+    try:
+        additional_czimd['CustomAttributes'] = metadatadict_czi['ImageDocument']['Metadata']['CustomAttributes']
+    except:
+        additional_czimd['CustomAttributes'] = None
 
-        print('Getting CZI Metadata ...')
-        md = get_metadata_czi(imagefile, dim2none=False)
-        additional_md = get_additional_metadata_czi(imagefile)
+    try:
+        additional_czimd['DisplaySetting'] = metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
+    except KeyError as e:
+        print('Key not found:', e)
+        additional_czimd['DisplaySetting'] = None
 
-    return md, additional_md
+    try:
+        additional_czimd['Layers'] = metadatadict_czi['ImageDocument']['Metadata']['Layers']
+    except KeyError as e:
+        print('Key not found:', e)
+        additional_czimd['Layers'] = None
+
+    # close CZI file
+    czi.close()
+
+    return additional_czimd
 
 
 def create_ipyviewer_ome_tiff(array, metadata):
@@ -615,282 +921,6 @@ def display_image(array, metadata, sliders,
     print('Min-Max (Current Plane):', image.min(), '-', image.max())
 
 
-def get_metadata_czi(filename, dim2none=False):
-    """
-    # map dimension character to description for CZI files
-    DIMENSIONS = {
-        '0': 'Sample',  # e.g. RGBA
-        'X': 'Width',
-        'Y': 'Height',
-        'C': 'Channel',
-        'Z': 'Slice',  # depth
-        'T': 'Time',
-        'R': 'Rotation',
-        'S': 'Scene',  # contiguous regions of interest in a mosaic image
-        'I': 'Illumination',  # direction
-        'B': 'Block',  # acquisition
-        'M': 'Mosaic',  # index of tile for compositing a scene
-        'H': 'Phase',  # e.g. Airy detector fibers
-        'V': 'View',  # e.g. for SPIM
-    }
-    """
-
-    # get CZI object and read array
-    czi = zis.CziFile(filename)
-    #mdczi = czi.metadata()
-
-    # parse the XML into a dictionary
-    metadatadict_czi = xmltodict.parse(czi.metadata())
-    metadata = create_metadata_dict()
-
-    # get directory and filename etc.
-    metadata['Directory'] = os.path.dirname(filename)
-    metadata['Filename'] = os.path.basename(filename)
-    metadata['Extension'] = 'czi'
-    metadata['ImageType'] = 'czi'
-
-    # add axes and shape information
-    metadata['Axes'] = czi.axes
-    metadata['Shape'] = czi.shape
-
-    # determine pixel type for CZI array
-    metadata['NumPy.dtype'] = czi.dtype
-
-    # check if the CZI image is an RGB image depending on the last dimension entry of axes
-    if czi.axes[-1] == 3:
-        metadata['isRGB'] = True
-
-    metadata['Information'] = metadatadict_czi['ImageDocument']['Metadata']['Information']
-    try:
-        metadata['PixelType'] = metadata['Information']['Image']['PixelType']
-    except KeyError as e:
-        print('Key not found:', e)
-        metadata['PixelType'] = None
-
-    metadata['SizeX'] = np.int(metadata['Information']['Image']['SizeX'])
-    metadata['SizeY'] = np.int(metadata['Information']['Image']['SizeY'])
-
-    try:
-        metadata['SizeZ'] = np.int(metadata['Information']['Image']['SizeZ'])
-    except:
-        if dim2none:
-            metadata['SizeZ'] = None
-        if not dim2none:
-            metadata['SizeZ'] = 1
-
-    try:
-        metadata['SizeC'] = np.int(metadata['Information']['Image']['SizeC'])
-    except:
-        if dim2none:
-            metadata['SizeC'] = None
-        if not dim2none:
-            metadata['SizeC'] = 1
-
-    channels = []
-    for ch in range(metadata['SizeC']):
-        try:
-            channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
-                                            ['Channels']['Channel'][ch]['ShortName'])
-        except:
-            try:
-                channels.append(metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
-                                                ['Channels']['Channel']['ShortName'])
-            except:
-                channels.append(str(ch))
-
-    metadata['Channels'] = channels
-
-    try:
-        metadata['SizeT'] = np.int(metadata['Information']['Image']['SizeT'])
-    except:
-        if dim2none:
-            metadata['SizeT'] = None
-        if not dim2none:
-            metadata['SizeT'] = 1
-
-    try:
-        metadata['SizeM'] = np.int(metadata['Information']['Image']['SizeM'])
-    except:
-        if dim2none:
-            metadatada['SizeM'] = None
-        if not dim2none:
-            metadata['SizeM'] = 1
-
-    try:
-        metadata['SizeB'] = np.int(metadata['Information']['Image']['SizeB'])
-    except:
-
-        if dim2none:
-            metadatada['SizeB'] = None
-        if not dim2none:
-            metadata['SizeB'] = 1
-
-    try:
-        metadata['SizeS'] = np.int(metadata['Information']['Image']['SizeS'])
-    except:
-        if dim2none:
-            metadatada['SizeS'] = None
-        if not dim2none:
-            metadata['SizeS'] = 1
-
-    try:
-        metadata['Scaling'] = metadatadict_czi['ImageDocument']['Metadata']['Scaling']
-        metadata['XScale'] = float(metadata['Scaling']['Items']['Distance'][0]['Value']) * 1000000
-        metadata['YScale'] = float(metadata['Scaling']['Items']['Distance'][1]['Value']) * 1000000
-        metadata['XScale'] = np.round(metadata['XScale'], 3)
-        metadata['YScale'] = np.round(metadata['YScale'], 3)
-        try:
-            metadata['XScaleUnit'] = metadata['Scaling']['Items']['Distance'][0]['DefaultUnitFormat']
-            metadata['YScaleUnit'] = metadata['Scaling']['Items']['Distance'][1]['DefaultUnitFormat']
-        except:
-            metadata['XScaleUnit'] = None
-            metadata['YScaleUnit'] = None
-        try:
-            metadata['ZScale'] = float(metadata['Scaling']['Items']['Distance'][2]['Value']) * 1000000
-            metadata['ZScale'] = np.round(metadata['ZScale'], 3)
-            try:
-                metadata['ZScaleUnit'] = metadata['Scaling']['Items']['Distance'][2]['DefaultUnitFormat']
-            except:
-                metadata['ZScaleUnit'] = metadata['XScaleUnit']
-        except:
-            if dim2none:
-                metadata['ZScale'] = metadata['XScaleUnit']
-            if not dim2none:
-                # set to isotropic scaling if it was single plane only
-                metadata['ZScale'] = metadata['XScale']
-    except:
-        metadata['Scaling'] = None
-
-    # try to get software version
-    try:
-        metadata['SW-Name'] = metadata['Information']['Application']['Name']
-        metadata['SW-Version'] = metadata['Information']['Application']['Version']
-    except KeyError as e:
-        print('Key not found:', e)
-        metadata['SW-Name'] = None
-        metadata['SW-Version'] = None
-
-    try:
-        metadata['AcqDate'] = metadata['Information']['Image']['AcquisitionDateAndTime']
-    except KeyError as e:
-        print('Key not found:', e)
-        metadata['AcqDate'] = None
-
-    try:
-        metadata['Instrument'] = metadata['Information']['Instrument']
-    except KeyError as e:
-        print('Key not found:', e)
-        metadata['Instrument'] = None
-
-    if metadata['Instrument'] is not None:
-
-        # get objective data
-        try:
-            metadata['ObjName'] = metadata['Instrument']['Objectives']['Objective']['@Name']
-        except:
-            metadata['ObjName'] = None
-
-        try:
-            metadata['ObjImmersion'] = metadata['Instrument']['Objectives']['Objective']['Immersion']
-        except:
-            metadata['ObjImmersion'] = None
-
-        try:
-            metadata['ObjNA'] = np.float(metadata['Instrument']['Objectives']['Objective']['LensNA'])
-        except:
-            metadata['ObjNA'] = None
-
-        try:
-            metadata['ObjID'] = metadata['Instrument']['Objectives']['Objective']['@Id']
-        except:
-            metadata['ObjID'] = None
-
-        try:
-            metadata['TubelensMag'] = np.float(metadata['Instrument']['TubeLenses']['TubeLens']['Magnification'])
-        except:
-            metadata['TubelensMag'] = None
-
-        try:
-            metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
-        except KeyError as e:
-            metadata['ObjNominalMag'] = None
-
-        try:
-            metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
-        except:
-            metadata['ObjMag'] = None
-
-        # get detector information
-        try:
-            metadata['DetectorID'] = metadata['Instrument']['Detectors']['Detector']['@Id']
-        except:
-            metadata['DetectorID'] = None
-
-        try:
-            metadata['DetectorModel'] = metadata['Instrument']['Detectors']['Detector']['@Name']
-        except:
-            metadata['DetectorModel'] = None
-
-        try:
-            metadata['DetectorName'] = metadata['Instrument']['Detectors']['Detector']['Manufacturer']['Model']
-        except:
-            metadata['DetectorName'] = None
-
-        # delete some key from dict
-        del metadata['Instrument']
-
-    del metadata['Information']
-    del metadata['Scaling']
-
-    # close CZI file
-    czi.close()
-
-    return metadata
-
-
-def get_additional_metadata_czi(filename):
-
-
-    # get CZI object and read array
-    czi = zis.CziFile(filename)
-
-    # parse the XML into a dictionary
-    metadatadict_czi = xmltodict.parse(czi.metadata())
-    additional_czimd = {}
-
-    try:
-        additional_czimd['Experiment'] = metadatadict_czi['ImageDocument']['Metadata']['Experiment']
-    except:
-        additional_czimd['Experiment'] = None
-
-    try:
-        additional_czimd['HardwareSetting'] = metadatadict_czi['ImageDocument']['Metadata']['HardwareSetting']
-    except:
-        additional_czimd['HardwareSetting'] = None
-
-    try:
-        additional_czimd['CustomAttributes'] = metadatadict_czi['ImageDocument']['Metadata']['CustomAttributes']
-    except:
-        additional_czimd['CustomAttributes'] = None
-
-    try:
-        additional_czimd['DisplaySetting'] = metadatadict_czi['ImageDocument']['Metadata']['DisplaySetting']
-    except KeyError as e:
-        print('Key not found:', e)
-        additional_czimd['DisplaySetting'] = None
-
-    try:
-        additional_czimd['Layers'] = metadatadict_czi['ImageDocument']['Metadata']['Layers']
-    except KeyError as e:
-        print('Key not found:', e)
-        additional_czimd['Layers'] = None
-
-    # close CZI file
-    czi.close()
-
-    return additional_czimd
-
-
 def get_dimorder(dimstring):
 
     dimindex_list = []
@@ -1101,40 +1131,6 @@ def show_napari(array, metadata,
                                  gamma=gamma)
 
 
-def getWellInfofromCZI(wellstring):
-
-    # labeling schemes for plates up-to 1536 wellplate
-    colIDs = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
-              '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24',
-              '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36',
-              '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', ]
-
-    rowIDs = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
-              'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF']
-
-    wellOK = wellstring[1:]
-    wellOK = wellOK[:-1]
-    wellOK = re.sub(r'\s+', '', wellOK)
-    welllist = [item for item in wellOK.split(',') if item.strip()]
-
-    cols = []
-    rows = []
-
-    for i in range(0, len(welllist)):
-        wellid_split = re.findall('\d+|\D+', welllist[i])
-        well_ch = wellid_split[0]
-        well_id = wellid_split[1]
-        cols.append(np.int(well_id) - 1)
-        well_id_index = rowIDs.index(well_ch)
-        rows.append(well_id_index)
-
-    welldict = Counter(welllist)
-
-    numwells = len(welllist)
-
-    return welllist, cols, rows, welldict, numwells
-
-
 def getXMLnodes(filename_czi, searchpath, showoutput=False):
 
     czi = zis.CziFile(filename_czi)
@@ -1212,10 +1208,10 @@ def writexml_czi(filename, xmlsuffix='_CZI_MetaData.xml'):
 
     # change file name
     xmlfile = filename.replace('.czi', xmlsuffix)
-    
+
     # get tree from string
     tree = ET.ElementTree(ET.fromstring(mdczi))
-    
+
     # write XML file to same folder
     tree.write(xmlfile, encoding='utf-8', method='xml')
 
@@ -1231,7 +1227,7 @@ def writexml_ometiff(filename, xmlsuffix='_OMETIFF_MetaData.xml'):
 
     with tifffile.TiffFile(filename) as tif:
             #omexml_string = tif[0].image_description.decode('utf-8')
-            omexml_string = tif[0].image_description
+        omexml_string = tif[0].image_description
 
     # get tree from string
     #tree = ET.ElementTree(ET.fromstring(omexml_string.encode('utf-8')))
@@ -1239,8 +1235,22 @@ def writexml_ometiff(filename, xmlsuffix='_OMETIFF_MetaData.xml'):
 
     # change file name
     xmlfile = filename.replace(ext, xmlsuffix)
-    
+
     tree.write(xmlfile, encoding='utf-8', method='xml', pretty_print=True)
     print('Created OME-XML file for testdata: ', filename)
 
     return xmlfile
+
+
+def getImageSeriesIDforWell(welllist, wellID):
+    """
+    Returns all ImageSeries (for OME-TIFF) indicies for a specific wellID
+
+    :param welllist: list containing all wellIDs as stringe, e.g. '[B4, B4, B4, B4, B5, B5, B5, B5]'
+    :param wellID: string specifying the well, eg.g. 'B4'
+    :return: imageseriesindices - list containing all ImageSeries indices, which correspond the the well
+    """
+
+    imageseriesindices = [i for i, x in enumerate(welllist) if x == wellID]
+
+    return imageseriesindices
