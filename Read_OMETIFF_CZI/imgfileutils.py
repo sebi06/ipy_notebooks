@@ -456,7 +456,6 @@ def get_metadata_czi(filename, dim2none=False):
         del metadata['Instrument']
 
     # check for well information
-
     metadata['Well_ArrayNames'] = []
     metadata['Well_Indices'] = []
     metadata['Well_PositionNames'] = []
@@ -465,23 +464,49 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['WellCounter'] = None
 
     try:
+        # extract well information from the dictionary
         allscenes = metadata['Information']['Image']['Dimensions']['S']['Scenes']['Scene']
+
+        # loop over all detected scenes
         for s in range(metadata['SizeS']):
-            well = allscenes[s]
-            metadata['Well_ArrayNames'].append(well['ArrayName'])
+
+            # more than one scene detected
+            if metadata['SizeS'] > 1:
+                # get the current well and add the array name to the metadata
+                well = allscenes[s]
+                metadata['Well_ArrayNames'].append(well['ArrayName'])
+
+            # exactly one scene detected (e.g. after split scenes etc.)
+            elif metadata['SizeS'] == 1:
+                # only get the current well - nor arraynames exist !
+                well = allscenes
+
+            # get the well information
             metadata['Well_Indices'].append(well['@Index'])
             metadata['Well_PositionNames'].append(well['@Name'])
             metadata['Well_ColId'].append(well['Shape']['ColumnIndex'])
             metadata['Well_RowId'].append(well['Shape']['RowIndex'])
 
-        # count the content of the list, e.g. how many time a certain well was detected
-        metadata['WellCounter'] = Counter(metadata['Well_ArrayNames'])
-        # count the number of different wells
-        metadata['NumWells'] = len(metadata['WellCounter'].keys())
+            # more than one scene detected
+            if metadata['SizeS'] > 1:
+                # count the content of the list, e.g. how many time a certain well was detected
+                metadata['WellCounter'] = Counter(metadata['Well_ArrayNames'])
+
+            # exactly one scene detected (e.g. after split scenes etc.)
+            elif metadata['SizeS'] == 1:
+
+                # set ArrayNames equal to PositionNames for convenience
+                metadata['Well_ArrayNames'] = metadata['Well_PositionNames']
+
+                # count the content of the list, e.g. how many time a certain well was detected
+                metadata['WellCounter'] = Counter(metadata['Well_PositionNames'])
+
+            # count the number of different wells
+            metadata['NumWells'] = len(metadata['WellCounter'].keys())
 
     except KeyError as e:
-        print('Key not found:', e)
-        print('No Scence or Well Information detected:')
+        print('Key not found in Metadata Dictionary:', e)
+        print('No Scence or Well Information detected.')
 
     del metadata['Information']
     del metadata['Scaling']
