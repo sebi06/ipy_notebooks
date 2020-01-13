@@ -13081,10 +13081,10 @@ div#notebook {
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1">########################################################################</span>
 <span class="c1"># File       : using_apeer-ometiff-library.ipynb</span>
-<span class="c1"># Version    : 0.1</span>
+<span class="c1"># Version    : 0.2</span>
 <span class="c1"># Author     : czsrh</span>
-<span class="c1"># Date       : 17.12.2019</span>
-<span class="c1"># Insitution : Carl Zeiss Microscopy GmbH</span>
+<span class="c1"># Date       : 13.01.2019</span>
+<span class="c1"># Institution : Carl Zeiss Microscopy GmbH</span>
 <span class="c1">#</span>
 <span class="c1"># Disclaimer: Just for testing - Use at your own risk.</span>
 <span class="c1"># Feedback or Improvements are welcome.</span>
@@ -13100,12 +13100,12 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong><em>Reading OME-TIFF files from Python using the apeer-ometiff-library</em></strong></p>
-<p>The APEER platform allows crating modules and workflows using basically any programming language due to its uderlying Docker(TM) technology. Nevertheless Python seens to be the favorite choice for mots of the time for various reasons:</p>
+<p>The APEER platform allows creating modules and workflows using basically any programming language due to its uderlying Docker(TM) technology. Nevertheless Python seens to be the favorite choice for mots of the time for various reasons:</p>
 <ul>
-<li>Simple enough to be used by resechers with scripting experience</li>
+<li>Simple enough to be used by reseachers with scripting experience</li>
 <li>Powerful enough to create amazing computational tools</li>
 <li>A huge and very open community and the whole ecosystem behind it</li>
-<li>Probably the most popular langugae when it come to topics like Machine Learning</li>
+<li>Probably the most popular language when it come to topics like Machine Learning</li>
 </ul>
 <p>The topic or question what is the "best" image data format for microscopy is a very interesting and also quite difficult question. There are no easy answers and there is no right or wrong here.</p>
 <p>Since the APEER platfrom tries to provide solutions our team decided that we must for sure support the currently most popular image data format for microscoscopy image data, which cleary is OME-TIFF (despite its known limitations). Therefore we explored "easy and simple" ways to read OME-TIFF for the most common use cases. We just want a simple python-based tool to read and write OME-TIFF without the need to include JAVA etc. into the modules. Therfore we reused parts of the existing python ecossystem, especially python-bioformats and tifffile, added some extra code and created a basic PyPi package.</p>
@@ -13117,6 +13117,16 @@ div#notebook {
 </li>
 </ul>
 <p>More information on the source code can be found on the APEER GitHub project page: <a href="https://github.com/apeer-micro/apeer-ometiff-library">GitHub - apeer-ometiff-library</a></p>
+<p>In order to make things a bit easier we create a litte helper script called imgfileutils.py which can be found here</p>
+<ul>
+<li><a href="https://github.com/zeiss-microscopy/OAD/blob/master/jupyter_notebooks/Read_CZI_and_OMETIFF_and_display_widgets_and_napari/modules/imgfileutils.py">ZEISS GitHub OAD - imagefileutils.py</a></li>
+</ul>
+<p>The complete notebook can be found here:</p>
+<ul>
+<li><a href="https://github.com/zeiss-microscopy/OAD/blob/master/jupyter_notebooks/Read_CZI_and_OMETIFF_and_display_widgets_and_napari/using_apeer-ometiff-library.ipynb">ZEISS GitHub OAD - using_apeer-ometiff-library.ipynb</a></li>
+</ul>
+<p>Remark: The notebook uses a small subset of the original dataset because of the filesize. Therefore the images used
+for illustration do not ecxatly correspond to what one will see if using the provided testfiles.</p>
 
 </div>
 </div>
@@ -13130,6 +13140,8 @@ div#notebook {
 <span class="kn">from</span> <span class="nn">apeer_ometiff_library</span> <span class="kn">import</span> <span class="n">io</span><span class="p">,</span> <span class="n">processing</span><span class="p">,</span> <span class="n">omexmlClass</span>
 
 <span class="c1"># import script with some useful functions</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;modules&#39;</span><span class="p">)</span>
 <span class="kn">import</span> <span class="nn">imgfileutils</span> <span class="k">as</span> <span class="nn">imf</span>
 </pre></div>
 
@@ -13140,11 +13152,11 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[4]:</div>
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># define your OME-TIFF file here</span>
-<span class="n">filename</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;c:\Temp\CellDivision_T=15_Z=20_CH=2_DCV.ome.tiff&#39;</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;testdata\CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff&#39;</span>
 
 <span class="c1"># extract XML and save it to disk</span>
 <span class="n">xmlometiff</span> <span class="o">=</span> <span class="n">imf</span><span class="o">.</span><span class="n">writexml_ometiff</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
@@ -13164,7 +13176,7 @@ div#notebook {
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Created OME-XML file for testdata:  c:\Temp\CellDivision_T=15_Z=20_CH=2_DCV.ome.tiff
+<pre>Created OME-XML file for testdata:  testdata\CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff
 </pre>
 </div>
 </div>
@@ -13209,7 +13221,7 @@ div#notebook {
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[5]:</div>
+<div class="prompt input_prompt">In&nbsp;[4]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Read metadata and array differently for OME-TIFF by using the io function of the apeer-ometiff library</span>
@@ -13236,7 +13248,6 @@ div#notebook {
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Image Type:  ometiff
-Getting OME-TIFF Metadata ...
 </pre>
 </div>
 </div>
@@ -13247,7 +13258,7 @@ Getting OME-TIFF Metadata ...
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[6]:</div>
+<div class="prompt input_prompt">In&nbsp;[5]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># check the shape of numpy array containing the pixel data</span>
@@ -13281,15 +13292,15 @@ Getting OME-TIFF Metadata ...
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Array Shape:  (2, 15, 20, 700, 700)
-Dimension Order (BioFormats) :  CTZYX
-SizeT :  15
-SizeZ :  20
+<pre>Array Shape:  (10, 15, 2, 256, 256)
+Dimension Order (BioFormats) :  TZCYX
+SizeT :  10
+SizeZ :  15
 SizeC :  2
-SizeX :  700
-SizeY :  700
-XScale:  0.09057667
-YScale:  0.09057667
+SizeX :  256
+SizeY :  256
+XScale:  0.09057667415221031
+YScale:  0.09057667415221031
 ZScale:  0.32
 </pre>
 </div>
@@ -13301,7 +13312,7 @@ ZScale:  0.32
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[7]:</div>
+<div class="prompt input_prompt">In&nbsp;[6]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># show the complete metadata dictionary</span>
@@ -13324,40 +13335,40 @@ ZScale:  0.32
 
 
 <div class="output_subarea output_stream output_stdout output_text">
-<pre>Directory  :  c:\Temp
-Filename  :  CellDivision_T=15_Z=20_CH=2_DCV.ome.tiff
+<pre>Directory  :  testdata
+Filename  :  CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff
 Extension  :  ome.tiff
 ImageType  :  ometiff
-Name  :  
-AcqDate  :  2016-02-12T09:41:02.4915604Z
+Name  :  CellDivision_T=10_Z=15_CH=2_DCV_small.czi #1
+AcqDate  :  2016-02-12T09:41:02.491
 TotalSeries  :  1
-SizeX  :  700
-SizeY  :  700
-SizeZ  :  20
+SizeX  :  256
+SizeY  :  256
+SizeZ  :  15
 SizeC  :  2
-SizeT  :  15
-Sizes BF  :  [1, 15, 20, 2, 700, 700]
-DimOrder BF  :  XYZTC
-DimOrder BF Array  :  CTZYX
+SizeT  :  10
+Sizes BF  :  [1, 10, 15, 2, 256, 256]
+DimOrder BF  :  XYCZT
+DimOrder BF Array  :  TZCYX
 DimOrder CZI  :  None
 Axes  :  None
 Shape  :  None
 isRGB  :  None
 ObjNA  :  1.2
-ObjMag  :  50
+ObjMag  :  50.0
 ObjID  :  Objective:1
 ObjName  :  None
 ObjImmersion  :  None
-XScale  :  0.09057667
-YScale  :  0.09057667
+XScale  :  0.09057667415221031
+YScale  :  0.09057667415221031
 ZScale  :  0.32
-XScaleUnit  :  None
-YScaleUnit  :  None
-ZScaleUnit  :  None
+XScaleUnit  :  µm
+YScaleUnit  :  µm
+ZScaleUnit  :  µm
 DetectorModel  :  None
 DetectorName  :  []
-DetectorID  :  Detector:1
-InstrumentID  :  Instrument:1
+DetectorID  :  Detector:506
+InstrumentID  :  Instrument:0
 Channels  :  [&#39;LED555&#39;, &#39;LED470&#39;]
 ImageIDs  :  [0]
 NumPy.dtype  :  None
@@ -13371,7 +13382,7 @@ NumPy.dtype  :  None
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[8]:</div>
+<div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Here we use https://ipywidgets.readthedocs.io/en/latest/ to create some simple and interactive controls to navigate</span>
@@ -13402,13 +13413,13 @@ NumPy.dtype  :  None
 
  
  
-<div id="657963c3-6064-4180-8484-38302ab64656"></div>
+<div id="0625b0b1-8763-43ad-b24b-ab5c85b86eb3"></div>
 <div class="output_subarea output_widget_view ">
 <script type="text/javascript">
-var element = $('#657963c3-6064-4180-8484-38302ab64656');
+var element = $('#0625b0b1-8763-43ad-b24b-ab5c85b86eb3');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "b5d610877ec04720ac16f97d171fbb37", "version_major": 2, "version_minor": 0}
+{"model_id": "b3a57b7a056246a58f28ee58c7d5f9f8", "version_major": 2, "version_minor": 0}
 </script>
 </div>
 
@@ -13424,13 +13435,13 @@ var element = $('#657963c3-6064-4180-8484-38302ab64656');
 
  
  
-<div id="f37fcb9c-9794-4944-b92a-5d896dad006b"></div>
+<div id="78f25678-2ad9-4eb6-b595-17dae1ca0aee"></div>
 <div class="output_subarea output_widget_view ">
 <script type="text/javascript">
-var element = $('#f37fcb9c-9794-4944-b92a-5d896dad006b');
+var element = $('#78f25678-2ad9-4eb6-b595-17dae1ca0aee');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "e114fbf5c26848338cb575b96d4c476a", "version_major": 2, "version_minor": 0}
+{"model_id": "2ec6a8151b4b41a8b0e21c781afea928", "version_major": 2, "version_minor": 0}
 </script>
 </div>
 
@@ -13450,7 +13461,7 @@ var element = $('#f37fcb9c-9794-4944-b92a-5d896dad006b');
 </div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
-<div class="prompt input_prompt">In&nbsp;[10]:</div>
+<div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
 <div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Here we use the Napari viewer (https://github.com/napari/napari) to visualize the complete OME-TIFF stack,</span>
@@ -13475,16 +13486,16 @@ var element = $('#f37fcb9c-9794-4944-b92a-5d896dad006b');
 
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Initializing Napari Viewer ...
-Dim PosT :  1
-Dim PosC :  0
-Dim PosZ :  2
-Scale Factors :  [1.0, 1.0, 3.533, 1.0, 1.0]
-Shape Channel :  0 (15, 20, 700, 700)
-Scaling Factors:  [1.0, 1.0, 3.533, 1.0, 1.0]
-Scaling:  [0, 7941.0]
-Shape Channel :  1 (15, 20, 700, 700)
-Scaling Factors:  [1.0, 1.0, 3.533, 1.0, 1.0]
-Scaling:  [0, 33477.0]
+Dim PosT :  0
+Dim PosC :  2
+Dim PosZ :  1
+Scale Factors :  [1.0, 3.533, 1.0, 1.0, 1.0]
+Shape Channel :  0 (10, 15, 256, 256)
+Scaling Factors:  [1.0, 3.533, 1.0, 1.0, 1.0]
+Scaling:  [0, 4927.0]
+Shape Channel :  1 (10, 15, 256, 256)
+Scaling Factors:  [1.0, 3.533, 1.0, 1.0, 1.0]
+Scaling:  [0, 25331.0]
 </pre>
 </div>
 </div>
@@ -13501,16 +13512,24 @@ Scaling:  [0, 33477.0]
 </div>
 </div>
 </div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>In order to create a slideshow using this notebook run the foolowing lines from a command line:</p>
+<div class="highlight"><pre><span></span><span class="nb">cd</span> c:<span class="se">\U</span>sers<span class="se">\.</span>..<span class="se">\j</span>upyter_notebooks<span class="se">\R</span>ead_CZI_and_OMETIFF_and_display_widgets_and_napari
+
+jupyter nbconvert using_apeer-ometiff-library.ipynb --to slides --post serve
+</pre></div>
+
+</div>
+</div>
+</div>
 <div class="cell border-box-sizing code_cell rendered">
 <div class="input">
 <div class="prompt input_prompt">In&nbsp;[&nbsp;]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="n">cd</span> <span class="n">c</span><span class="p">:</span>\<span class="n">Users</span>\<span class="n">m1srh</span>\<span class="n">Documents</span>\<span class="n">GitHub</span>\<span class="n">ipy_notebooks</span>\<span class="n">Read_OMETIFF_CZI</span>
-
-<span class="n">jupyter</span> <span class="n">nbconvert</span> <span class="n">using_apeer</span><span class="o">-</span><span class="n">ometiff</span><span class="o">-</span><span class="n">library</span><span class="o">.</span><span class="n">ipynb</span> <span class="o">--</span><span class="n">to</span> <span class="n">slides</span> <span class="o">--</span><span class="n">post</span> <span class="n">serve</span>
-
-<span class="n">jupyter</span> <span class="n">nbconvert</span> <span class="n">using_apeer</span><span class="o">-</span><span class="n">ometiff</span><span class="o">-</span><span class="n">library</span><span class="o">.</span><span class="n">ipynb</span> <span class="o">--</span><span class="n">to</span> <span class="n">slides</span> <span class="o">--</span><span class="n">post</span> <span class="n">serve</span> <span class="o">--</span><span class="n">SlidesExporter</span><span class="o">.</span><span class="n">reveal_theme</span><span class="o">=</span><span class="n">serif</span> <span class="o">--</span><span class="n">SlidesExporter</span><span class="o">.</span><span class="n">reveal_scroll</span><span class="o">=</span><span class="kc">True</span> <span class="o">--</span><span class="n">SlidesExporter</span><span class="o">.</span><span class="n">reveal_transition</span><span class="o">=</span><span class="n">none</span>
+<div class=" highlight hl-ipython3"><pre><span></span> 
 </pre></div>
 
     </div>

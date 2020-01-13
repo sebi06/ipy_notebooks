@@ -1,10 +1,10 @@
 ```python
 ########################################################################
-# File       : using_apeer-ometiff-library.ipynb
-# Version    : 0.1
-# Author     : czsrh
-# Date       : 17.12.2019
-# Insitution : Carl Zeiss Microscopy GmbH
+# File        : using_apeer-ometiff-library.ipynb
+# Version     : 0.2
+# Author      : czsrh
+# Date        : 13.01.2019
+# Institution : Carl Zeiss Microscopy GmbH
 #
 # Disclaimer: Just for testing - Use at your own risk.
 # Feedback or Improvements are welcome.
@@ -13,24 +13,35 @@
 
 ***Reading OME-TIFF files from Python using the apeer-ometiff-library***
 
-The APEER platform allows crating modules and workflows using basically any programming language due to its uderlying Docker(TM) technology. Nevertheless Python seens to be the favorite choice for mots of the time for various reasons:
+The APEER platform allows creating modules and workflows using basically any programming language due to its underlying Docker(TM) technology. Nevertheless Python seems to be the favorite choice for mots of the time for various reasons:
 
-* Simple enough to be used by resechers with scripting experience
+* Simple enough to be used by researchers with scripting experience
 * Powerful enough to create amazing computational tools
 * A huge and very open community and the whole ecosystem behind it
-* Probably the most popular langugae when it come to topics like Machine Learning
+* Probably the most popular language when it come to topics like Machine Learning
 
 The topic or question what is the "best" image data format for microscopy is a very interesting and also quite difficult question. There are no easy answers and there is no right or wrong here.
 
-Since the APEER platfrom tries to provide solutions our team decided that we must for sure support the currently most popular image data format for microscoscopy image data, which cleary is OME-TIFF (despite its known limitations). Therefore we explored "easy and simple" ways to read OME-TIFF for the most common use cases. We just want a simple python-based tool to read and write OME-TIFF without the need to include JAVA etc. into the modules. Therfore we reused parts of the existing python ecossystem, especially python-bioformats and tifffile, added some extra code and created a basic PyPi package.
+Since the APEER platform tries to provide solutions our team decided that we must for sure support the currently most popular image data format for microscopy image data, which clearly is OME-TIFF (despite its known limitations). Therefore we explored "easy and simple" ways to read OME-TIFF for the most common use cases. We just want a simple python-based tool to read and write OME-TIFF without the need to include JAVA etc. into the modules. Therefore we reused parts of the existing python ecosystem, especially python-bioformats and tifffile, added some extra code and created a basic PyPi package.
 
-This package can be easily inclued in every APEER module but obviousy it can be also used inside our python application or within jupyter notebook.
+This package can be easily included in every APEER module but obviously it can be also used inside our python application or within jupyter notebook.
 
 * [PyPi - apeer-ometiff-library](https://pypi.org/project/apeer-ometiff-library/)
 
 * [PyPi - python-bioformats](https://pypi.org/project/python-bioformats/).
 
 More information on the source code can be found on the APEER GitHub project page: [GitHub - apeer-ometiff-library](https://github.com/apeer-micro/apeer-ometiff-library)
+    
+In order to make things a bit easier we create a little helper script called imgfileutils.py which can be found here
+
+* [ZEISS GitHub OAD - imagefileutils.py](https://github.com/zeiss-microscopy/OAD/blob/master/jupyter_notebooks/Read_CZI_and_OMETIFF_and_display_widgets_and_napari/modules/imgfileutils.py)
+
+The complete notebook can be found here:
+    
+* [ZEISS GitHub OAD - using_apeer-ometiff-library.ipynb](https://github.com/zeiss-microscopy/OAD/blob/master/jupyter_notebooks/Read_CZI_and_OMETIFF_and_display_widgets_and_napari/using_apeer-ometiff-library.ipynb)
+
+Remark: The notebook uses a small subset of the original dataset because of the file  size. Therefore the images used
+for illustration do not exactly correspond to what one will see if using the provided test files.
 
 
 ```python
@@ -38,19 +49,21 @@ More information on the source code can be found on the APEER GitHub project pag
 from apeer_ometiff_library import io, processing, omexmlClass
 
 # import script with some useful functions
+import sys
+sys.path.append(r'modules')
 import imgfileutils as imf
 ```
 
 
 ```python
 # define your OME-TIFF file here
-filename = r'c:\Temp\CellDivision_T=15_Z=20_CH=2_DCV.ome.tiff'
+filename = r'testdata\CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff'
 
 # extract XML and save it to disk
 xmlometiff = imf.writexml_ometiff(filename)
 ```
 
-    Created OME-XML file for testdata:  c:\Temp\CellDivision_T=15_Z=20_CH=2_DCV.ome.tiff
+    Created OME-XML file for testdata:  testdata\CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff
     
 
 ### Reading the OME-TIFF stack as an NumPy Array
@@ -97,12 +110,11 @@ metadata, add_metadata = imf.get_metadata(filename)
 ```
 
     Image Type:  ometiff
-    Getting OME-TIFF Metadata ...
     
 
 
 ```python
-# check the shape of numpy array containing the pixel data
+# check the shape of Numpy array containing the pixel data
 print('Array Shape: ', array.shape)
 
 # get dimension order from metadata
@@ -119,15 +131,15 @@ print('YScale: ', metadata['YScale'])
 print('ZScale: ', metadata['ZScale'])
 ```
 
-    Array Shape:  (2, 15, 20, 700, 700)
-    Dimension Order (BioFormats) :  CTZYX
-    SizeT :  15
-    SizeZ :  20
+    Array Shape:  (10, 15, 2, 256, 256)
+    Dimension Order (BioFormats) :  TZCYX
+    SizeT :  10
+    SizeZ :  15
     SizeC :  2
-    SizeX :  700
-    SizeY :  700
-    XScale:  0.09057667
-    YScale:  0.09057667
+    SizeX :  256
+    SizeY :  256
+    XScale:  0.09057667415221031
+    YScale:  0.09057667415221031
     ZScale:  0.32
     
 
@@ -139,40 +151,40 @@ for key, value in metadata.items():
     print(key, ' : ', value)
 ```
 
-    Directory  :  c:\Temp
-    Filename  :  CellDivision_T=15_Z=20_CH=2_DCV.ome.tiff
+    Directory  :  testdata
+    Filename   :  CellDivision_T=10_Z=15_CH=2_DCV_small.ome.tiff
     Extension  :  ome.tiff
     ImageType  :  ometiff
-    Name  :  
-    AcqDate  :  2016-02-12T09:41:02.4915604Z
+    Name  :  CellDivision_T=10_Z=15_CH=2_DCV_small.czi #1
+    AcqDate  :  2016-02-12T09:41:02.491
     TotalSeries  :  1
-    SizeX  :  700
-    SizeY  :  700
-    SizeZ  :  20
+    SizeX  :  256
+    SizeY  :  256
+    SizeZ  :  15
     SizeC  :  2
-    SizeT  :  15
-    Sizes BF  :  [1, 15, 20, 2, 700, 700]
-    DimOrder BF  :  XYZTC
-    DimOrder BF Array  :  CTZYX
+    SizeT  :  10
+    Sizes BF  :  [1, 10, 15, 2, 256, 256]
+    DimOrder BF  :  XYCZT
+    DimOrder BF Array  :  TZCYX
     DimOrder CZI  :  None
     Axes  :  None
     Shape  :  None
     isRGB  :  None
     ObjNA  :  1.2
-    ObjMag  :  50
+    ObjMag  :  50.0
     ObjID  :  Objective:1
     ObjName  :  None
     ObjImmersion  :  None
-    XScale  :  0.09057667
-    YScale  :  0.09057667
+    XScale  :  0.09057667415221031
+    YScale  :  0.09057667415221031
     ZScale  :  0.32
-    XScaleUnit  :  None
-    YScaleUnit  :  None
-    ZScaleUnit  :  None
+    XScaleUnit  :  µm
+    YScaleUnit  :  µm
+    ZScaleUnit  :  µm
     DetectorModel  :  None
     DetectorName  :  []
-    DetectorID  :  Detector:1
-    InstrumentID  :  Instrument:1
+    DetectorID  :  Detector:506
+    InstrumentID  :  Instrument:0
     Channels  :  ['LED555', 'LED470']
     ImageIDs  :  [0]
     NumPy.dtype  :  None
@@ -181,7 +193,7 @@ for key, value in metadata.items():
 
 ```python
 # Here we use https://ipywidgets.readthedocs.io/en/latest/ to create some simple and interactive controls to navigate
-# through the planes of an multi-dimensional NumPy Array. 
+# through the planes of an multi-dimensional NumPy Array.
 
 # display data using ipywidgets
 ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
@@ -195,7 +207,7 @@ display(ui, out)
 
 
 
-    VBox(children=(IntSlider(value=1, description='Channel:', max=2, min=1), IntSlider(value=1, continuous_update=…
+    VBox(children=(IntSlider(value=1, continuous_update=False, description='Time:', max=10, min=1), IntSlider(valu…
 
 
 <img src="images\display_ometiff_ipywidgets.png" />
@@ -210,25 +222,25 @@ imf.show_napari(array, metadata)
 ```
 
     Initializing Napari Viewer ...
-    Dim PosT :  1
-    Dim PosC :  0
-    Dim PosZ :  2
-    Scale Factors :  [1.0, 1.0, 3.533, 1.0, 1.0]
-    Shape Channel :  0 (15, 20, 700, 700)
-    Scaling Factors:  [1.0, 1.0, 3.533, 1.0, 1.0]
-    Scaling:  [0, 7941.0]
-    Shape Channel :  1 (15, 20, 700, 700)
-    Scaling Factors:  [1.0, 1.0, 3.533, 1.0, 1.0]
-    Scaling:  [0, 33477.0]
+    Dim PosT :  0
+    Dim PosC :  2
+    Dim PosZ :  1
+    Scale Factors :  [1.0, 3.533, 1.0, 1.0, 1.0]
+    Shape Channel :  0 (10, 15, 256, 256)
+    Scaling Factors:  [1.0, 3.533, 1.0, 1.0, 1.0]
+    Scaling:  [0, 4927.0]
+    Shape Channel :  1 (10, 15, 256, 256)
+    Scaling Factors:  [1.0, 3.533, 1.0, 1.0, 1.0]
+    Scaling:  [0, 25331.0]
     
 
 <img src="images\display_ometiff_napari.png" />
 
 
-```python
-cd c:\Users\m1srh\Documents\GitHub\ipy_notebooks\Read_OMETIFF_CZI
+In order to create a slideshow using this notebook run the following lines from a command line:
+
+```bash
+cd c:\Users\...\jupyter_notebooks\Read_CZI_and_OMETIFF_and_display_widgets_and_napari
 
 jupyter nbconvert using_apeer-ometiff-library.ipynb --to slides --post serve
-
-jupyter nbconvert using_apeer-ometiff-library.ipynb --to slides --post serve --SlidesExporter.reveal_theme=serif --SlidesExporter.reveal_scroll=True --SlidesExporter.reveal_transition=none
 ```
