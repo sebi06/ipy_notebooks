@@ -13100,15 +13100,20 @@ div#notebook {
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
 <p><strong><em>Reading OME-TIFF files from Python using the apeer-ometiff-library</em></strong></p>
-<p>The APEER platform allows creating modules and workflows using basically any programming language due to its uderlying Docker(TM) technology. Nevertheless Python seens to be the favorite choice for mots of the time for various reasons:</p>
+<p>The APEER platform allows creating modules and workflows using basically any programming language due to its underlying Docker(TM) technology.
+Nevertheless Python seems to be the favorite choice for most of the time for various reasons:</p>
 <ul>
-<li>Simple enough to be used by reseachers with scripting experience</li>
+<li>Simple enough to be used by researchers with scripting experience</li>
 <li>Powerful enough to create amazing computational tools</li>
 <li>A huge and very open community and the whole ecosystem behind it</li>
 <li>Probably the most popular language when it come to topics like Machine Learning</li>
 </ul>
-<p>The topic or question what is the "best" image data format for microscopy is a very interesting and also quite difficult question. There are no easy answers and there is no right or wrong here.</p>
-<p>Since the APEER platfrom tries to provide solutions our team decided that we must for sure support the currently most popular image data format for microscoscopy image data, which cleary is OME-TIFF (despite its known limitations). Therefore we explored "easy and simple" ways to read OME-TIFF for the most common use cases. We just want a simple python-based tool to read and write OME-TIFF without the need to include JAVA etc. into the modules. Therfore we reused parts of the existing python ecossystem, especially python-bioformats and tifffile, added some extra code and created a basic PyPi package.</p>
+<p>The topic or question what is the "best" image data format for microscopy is a very interesting and also quite difficult
+question. There are no easy answers and there is no right or wrong here.</p>
+<p>Since the APEER platform tries to provide solutions our team decided that we must for sure support the currently most popular
+image data format for microscopy image data, which clearly is OME-TIFF (despite its known limitations).
+We explored "easy and simple" ways to read OME-TIFF for the most common use cases. We just want a simple python-based tool to read and write OME-TIFF without the need to include JAVA etc. into the modules.
+Therefore we reused parts of the existing python ecossystem, especially python-bioformats and tifffile, added some extra code and created a basic PyPi package.</p>
 <p>This package can be easily inclued in every APEER module but obviousy it can be also used inside our python application or within jupyter notebook.</p>
 <ul>
 <li><p><a href="https://pypi.org/project/apeer-ometiff-library/">PyPi - apeer-ometiff-library</a></p>
@@ -13117,7 +13122,7 @@ div#notebook {
 </li>
 </ul>
 <p>More information on the source code can be found on the APEER GitHub project page: <a href="https://github.com/apeer-micro/apeer-ometiff-library">GitHub - apeer-ometiff-library</a></p>
-<p>In order to make things a bit easier we create a litte helper script called imgfileutils.py which can be found here</p>
+<p>In order to make things a bit easier we create a little helper script called imgfileutils.py which can be found here</p>
 <ul>
 <li><a href="https://github.com/zeiss-microscopy/OAD/blob/master/jupyter_notebooks/Read_CZI_and_OMETIFF_and_display_widgets_and_napari/modules/imgfileutils.py">ZEISS GitHub OAD - imagefileutils.py</a></li>
 </ul>
@@ -13125,8 +13130,8 @@ div#notebook {
 <ul>
 <li><a href="https://github.com/zeiss-microscopy/OAD/blob/master/jupyter_notebooks/Read_CZI_and_OMETIFF_and_display_widgets_and_napari/using_apeer-ometiff-library.ipynb">ZEISS GitHub OAD - using_apeer-ometiff-library.ipynb</a></li>
 </ul>
-<p>Remark: The notebook uses a small subset of the original dataset because of the filesize. Therefore the images used
-for illustration do not ecxatly correspond to what one will see if using the provided testfiles.</p>
+<p>Remark: The notebook uses a small subset of the original dataset because of the file size. Therefore the images used
+for illustration do not exactly correspond to what one will see if using the provided test files.</p>
 
 </div>
 </div>
@@ -13385,8 +13390,8 @@ NumPy.dtype  :  None
 <div class="prompt input_prompt">In&nbsp;[7]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Here we use https://ipywidgets.readthedocs.io/en/latest/ to create some simple and interactive controls to navigate</span>
-<span class="c1"># through the planes of an multi-dimensional NumPy Array. </span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Here we use https://ipywidgets.readthedocs.io/en/latest/ to create some simple and interactive</span>
+<span class="c1"># controls to navigate through the planes of an multi-dimensional NumPy Array. </span>
 
 <span class="c1"># display data using ipywidgets</span>
 <span class="n">ui</span><span class="p">,</span> <span class="n">out</span> <span class="o">=</span> <span class="n">imf</span><span class="o">.</span><span class="n">create_ipyviewer_ome_tiff</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
@@ -13413,13 +13418,13 @@ NumPy.dtype  :  None
 
  
  
-<div id="0625b0b1-8763-43ad-b24b-ab5c85b86eb3"></div>
+<div id="005457aa-d7a8-448b-9abb-cf53391e9eff"></div>
 <div class="output_subarea output_widget_view ">
 <script type="text/javascript">
-var element = $('#0625b0b1-8763-43ad-b24b-ab5c85b86eb3');
+var element = $('#005457aa-d7a8-448b-9abb-cf53391e9eff');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "b3a57b7a056246a58f28ee58c7d5f9f8", "version_major": 2, "version_minor": 0}
+{"model_id": "f234be48aaac46a8ac89e33480c06ba0", "version_major": 2, "version_minor": 0}
 </script>
 </div>
 
@@ -13435,13 +13440,13 @@ var element = $('#0625b0b1-8763-43ad-b24b-ab5c85b86eb3');
 
  
  
-<div id="78f25678-2ad9-4eb6-b595-17dae1ca0aee"></div>
+<div id="5cc6173a-f2e3-46e1-8c69-40d12d7ac64b"></div>
 <div class="output_subarea output_widget_view ">
 <script type="text/javascript">
-var element = $('#78f25678-2ad9-4eb6-b595-17dae1ca0aee');
+var element = $('#5cc6173a-f2e3-46e1-8c69-40d12d7ac64b');
 </script>
 <script type="application/vnd.jupyter.widget-view+json">
-{"model_id": "2ec6a8151b4b41a8b0e21c781afea928", "version_major": 2, "version_minor": 0}
+{"model_id": "4a9fe6ff9d1e4d98b2898071e618e706", "version_major": 2, "version_minor": 0}
 </script>
 </div>
 
@@ -13454,7 +13459,7 @@ var element = $('#78f25678-2ad9-4eb6-b595-17dae1ca0aee');
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="images\display_ometiff_ipywidgets.png" /></p>
+<p><img src="images/display_ometiff_ipywidgets.png" alt="IpyWidget Viewer" title="IpyWidget Viewer"></p>
 
 </div>
 </div>
@@ -13464,8 +13469,8 @@ var element = $('#78f25678-2ad9-4eb6-b595-17dae1ca0aee');
 <div class="prompt input_prompt">In&nbsp;[8]:</div>
 <div class="inner_cell">
     <div class="input_area">
-<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Here we use the Napari viewer (https://github.com/napari/napari) to visualize the complete OME-TIFF stack,</span>
-<span class="c1"># which is represented by a multi-dimensional NumPy Array. </span>
+<div class=" highlight hl-ipython3"><pre><span></span><span class="c1"># Here we use the Napari viewer (https://github.com/napari/napari) to visualize the</span>
+<span class="c1"># complete OME-TIFF stack, which is represented by a multi-dimensional NumPy Array. </span>
 
 <span class="c1"># configure napari automatiaclly based on metadata and show the OME-TIFF stack</span>
 <span class="n">imf</span><span class="o">.</span><span class="n">show_napari</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
@@ -13507,7 +13512,7 @@ Scaling:  [0, 25331.0]
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p><img src="images\display_ometiff_napari.png" /></p>
+<p><img src="images/display_ometiff_napari.png" alt="Napari Viewer" title="Napari Viewer"></p>
 
 </div>
 </div>
@@ -13515,7 +13520,7 @@ Scaling:  [0, 25331.0]
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<p>In order to create a slideshow using this notebook run the foolowing lines from a command line:</p>
+<p>In order to create a slideshow using this notebook run the following lines from a command line:</p>
 <div class="highlight"><pre><span></span><span class="nb">cd</span> c:<span class="se">\U</span>sers<span class="se">\.</span>..<span class="se">\j</span>upyter_notebooks<span class="se">\R</span>ead_CZI_and_OMETIFF_and_display_widgets_and_napari
 
 jupyter nbconvert using_apeer-ometiff-library.ipynb --to slides --post serve
