@@ -45,7 +45,8 @@ imgdict1 = {
     25: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Cryo\FIB_Stack.czi',
     26: r'E:\tuxedo\testpictures\Testdata_Zeiss\celldivison\CellDivision_T=15_Z=20_CH=2_DCV.czi',
     27: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Fruit_Fly_Brain\Fruit_Fly_Brain_3D.czi',
-    28: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Fruit_Fly_Brain\Fruit_Fly_Brain_3D.ome.tiff'
+    28: r'C:\Users\m1srh\Documents\Testdata_Zeiss\Fruit_Fly_Brain\Fruit_Fly_Brain_3D.ome.tiff',
+    29: r'C:\Users\m1srh\Documents\GitHub\ipy_notebooks\Read_OMETIFF_CZI\testdata\T=6_Z=15_CH=2.czi'
 }
 
 # define your testfiles here
@@ -61,21 +62,22 @@ imgdict2 = {
     6: os.path.join(testfolder, r'CellDivision_T=10_Z=15_CH=2_DCV_small.czi')
 }
 
-filename = imgdict2[6]
-#filename = imgdict1[28]
+#filename = imgdict2[6]
+filename = imgdict1[29]
 
 image_name = os.path.basename(filename)
 
 if filename.lower().endswith('.ome.tiff') or filename.lower().endswith('.ome.tif'):
 
     # Return value is an array of order (T, Z, C, X, Y)
-    (array, omexml) = io.read_ometiff(filename)
+    array, omexml = io.read_ometiff(filename)
     metadata, add_metadata = imf.get_metadata(filename, series=0)
     #ui, out = imf.create_ipyviewer_ome_tiff(array, metadata)
 
 if filename.lower().endswith('.czi'):
 
-    array, metadata, add_metadata = imf.get_array_czi(filename, replacezero=False)
+    # get the array and the metadata
+    array, metadata, add_metadata = imf.get_array_czi(filename, return_addmd=False)
     print(metadata['Shape'])
     print(metadata['Axes'])
     print(array.shape)
