@@ -13,11 +13,11 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import xmltodict
 import numpy as np
 from collections import Counter
-#import xml.etree.ElementTree as ET
 from lxml import etree as ET
-import napari
 import time
 import re
+from aicsimageio import AICSImage, imread
+import napari
 
 
 def get_imgtype(imagefile):
@@ -253,7 +253,7 @@ def get_metadata_czi(filename, dim2none=False):
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
-    #mdczi = czi.metadata()
+    mdczi = czi.metadata()
 
     # parse the XML into a dictionary
     metadatadict_czi = xmltodict.parse(czi.metadata())
@@ -328,7 +328,7 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['SizeM'] = np.int(metadata['Information']['Image']['SizeM'])
     except:
         if dim2none:
-            metadata['SizeM'] = None
+            metadatada['SizeM'] = None
         if not dim2none:
             metadata['SizeM'] = 1
 
@@ -337,7 +337,7 @@ def get_metadata_czi(filename, dim2none=False):
     except:
 
         if dim2none:
-            metadata['SizeB'] = None
+            metadatada['SizeB'] = None
         if not dim2none:
             metadata['SizeB'] = 1
 
@@ -345,7 +345,7 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['SizeS'] = np.int(metadata['Information']['Image']['SizeS'])
     except:
         if dim2none:
-            metadata['SizeS'] = None
+            metadatada['SizeS'] = None
         if not dim2none:
             metadata['SizeS'] = 1
 
@@ -429,7 +429,6 @@ def get_metadata_czi(filename, dim2none=False):
         try:
             metadata['ObjNominalMag'] = np.float(metadata['Instrument']['Objectives']['Objective']['NominalMagnification'])
         except KeyError as e:
-            print('Key not found:', e)
             metadata['ObjNominalMag'] = None
 
         try:
@@ -641,7 +640,7 @@ def create_ipyviewer_ome_tiff(array, metadata):
         ui = widgets.VBox([t, c, z, r])
 
         def get_TZC_czi(t_ind, c_ind, z_ind, r):
-            display_image(array, metadata, sliders, t=t_ind, c=c_ind, z=z_ind, vmin=r[0], vmax=r[1])
+            display_image(array, metadata, sliders, t=t_ind, c=t_ind, z=z_ind, vmin=r[0], vmax=r[1])
 
         out = widgets.interactive_output(get_TZC_czi, {'t_ind': t, 'c_ind': c, 'z_ind': z, 'r': r})
 

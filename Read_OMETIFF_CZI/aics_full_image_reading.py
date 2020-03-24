@@ -9,7 +9,7 @@ array6d = img.data  # returns 6D STCZYX numpy array
 dims = img.dims  # returns string "STCZYX"
 array_shape = img.shape  # returns tuple of dimension sizes in STCZYX order
 dims_subarray = img.size("STC")  # returns tuple of dimensions sizes for just STC
-subarray = img.get_image_data("CZYX", S=0, T=0)  # returns 4D CZYX numpy array
+subarray = img.get_image_data("CYX", Z=0, S=0, T=0)  # returns 4D CZYX numpy array
 
 # get metadata
 md = img.metadata  # returns the metadata object for this image type
@@ -20,4 +20,4 @@ md = img.metadata  # returns the metadata object for this image type
 
 print('Done.')
 
-img.view_napari()  # launches napari GUI and viewer
+# img.view_napari()  # launches napari GUI and viewer
