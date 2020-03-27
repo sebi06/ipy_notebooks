@@ -16,7 +16,8 @@ from collections import Counter
 from lxml import etree as ET
 import time
 import re
-from aicsimageio import AICSImage, imread
+from aicsimageio import AICSImage, imread, imread_dask
+import dask.array as da
 import napari
 
 
@@ -265,9 +266,20 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['Extension'] = 'czi'
     metadata['ImageType'] = 'czi'
 
-    # add axes and shape information
+    # add axes and shape information using czifile.py
     metadata['Axes'] = czi.axes
     metadata['Shape'] = czi.shape
+
+    # add axes and shape information using czifile.py
+    czi_aics = AICSImage(filename)
+    metadata['Axes_aics'] = czi_aics.dims
+    metadata['Shape_aics'] = czi_aics.shape
+    metadata['SizeX_aics'] = czi_aics.size_x
+    metadata['SizeY_aics'] = czi_aics.size_y
+    metadata['SizeC_aics'] = czi_aics.size_c
+    metadata['SizeZ_aics'] = czi_aics.size_t
+    metadata['SizeT_aics'] = czi_aics.size_t
+    metadata['SizeS_aics'] = czi_aics.size_s
 
     # determine pixel type for CZI array
     metadata['NumPy.dtype'] = czi.dtype
@@ -513,6 +525,9 @@ def get_metadata_czi(filename, dim2none=False):
 
     # close CZI file
     czi.close()
+
+    # close AICSImage object
+    czi_aics.close()
 
     return metadata
 
@@ -1139,7 +1154,8 @@ def get_scalefactor(metadata):
 def show_napari(array, metadata,
                 blending='additive',
                 gamma=0.85,
-                verbose=True):
+                verbose=True,
+                use_pylibczi=True):
     """
     Show the multidimensional array using the Napari viewer
 
@@ -1149,6 +1165,16 @@ def show_napari(array, metadata,
     :param gamma: NapariViewer value for Gamma
     :param verbose: show additional output
     """
+
+    def calc_scaling(data, corr_min=1.0,
+                     offset_min=0,
+                     corr_max=0.85,
+                     offset_max=0):
+
+        # get min-max values for initial scaling
+        minvalue = np.round((data.min() + offset_min) * corr_min)
+        maxvalue = np.round((data.max() + offset_max) * corr_max)
+        print('Scaling: ', minvalue, maxvalue)
 
     with napari.gui_qt():
 
@@ -1207,10 +1233,16 @@ def show_napari(array, metadata,
 
         if metadata['ImageType'] == 'czi':
 
-            # find position of dimensions
-            posZ = metadata['Axes'].find('Z')
-            posC = metadata['Axes'].find('C')
-            posT = metadata['Axes'].find('T')
+            if not use_pylibczi:
+                # use find position of dimensions
+                posZ = metadata['Axes'].find('Z')
+                posC = metadata['Axes'].find('C')
+                posT = metadata['Axes'].find('T')
+
+            if use_pylibczi:
+                posZ = metadata['Axes_aics'].find('Z')
+                posC = metadata['Axes_aics'].find('C')
+                posT = metadata['Axes_aics'].find('T')
 
             # get the scalefactors from the metadata
             scalef = get_scalefactor(metadata)
@@ -1235,7 +1267,16 @@ def show_napari(array, metadata,
                         chname = 'CH' + str(ch + 1)
 
                     # cut out channel
-                    channel = array.take(ch, axis=posC)
+                    # use dask if array is a dask.array
+                    if isinstance(array, da.Array):
+                        print('Extract Channel using Dask.Array')
+                        channel = array.compute().take(ch, axis=posC)
+
+                    else:
+                        # use normal numpy if not
+                        print('Extract Channel NumPy.Array')
+                        channel = array.take(ch, axis=posC)
+
                     print('Shape Channel : ', ch, channel.shape)
 
                     # actually show the image array
@@ -1243,23 +1284,22 @@ def show_napari(array, metadata,
                     print('Scaling Factors: ', scalefactors)
 
                     # get min-max values for initial scaling
-                    clim = [channel.min(), np.round(channel.max() * 0.85)]
-                    if verbose:
-                        print('Scaling: ', clim)
+                    #clim = calc_scaling(channel)
+
                     viewer.add_image(channel,
                                      name=chname,
                                      scale=scalefactors,
-                                     contrast_limits=clim,
+                                     # contrast_limits=clim,
                                      blending=blending,
-                                     gamma=gamma)
+                                     gamma=gamma,
+                                     is_pyramid=False)
 
             if metadata['SizeC'] == 1:
 
-                ch = 0
                 # just add one channel as a layer
                 try:
-                        # get the channel name
-                    chname = metadata['Channels'][ch]
+                    # get the channel name
+                    chname = metadata['Channels'][0]
                 except:
                     # or use CH1 etc. as string for the name
                     chname = 'CH' + str(ch + 1)
@@ -1269,15 +1309,15 @@ def show_napari(array, metadata,
                 print('Scaling Factors: ', scalefactors)
 
                 # get min-max values for initial scaling
-                clim = [array.min(), np.round(array.max() * 0.85)]
-                if verbose:
-                    print('Scaling: ', clim)
+                #clim = calc_scaling(array)
+
                 viewer.add_image(array,
                                  name=chname,
                                  scale=scalefactors,
-                                 contrast_limits=clim,
+                                 # contrast_limits=clim,
                                  blending=blending,
-                                 gamma=gamma)
+                                 gamma=gamma,
+                                 is_pyramid=False)
 
 
 def check_for_previewimage(czi):
