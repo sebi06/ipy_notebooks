@@ -3,12 +3,14 @@ import numpy as np
 #import matplotlib.pyplot as plt
 from skimage.feature import peak_local_max
 from skimage.morphology import watershed
-from skimage.filters import threshold_otsu, threshold_triangle
+from skimage.segmentation import random_walker
+from skimage.filters import threshold_otsu, threshold_triangle, rank
 from skimage.segmentation import clear_border
 from skimage.color import label2rgb
 from skimage.util import invert
+from skimage.filters import median, gaussian
 from skimage.morphology import closing, square
-from skimage.morphology import remove_small_objects, remove_small_holes
+from skimage.morphology import remove_small_objects, remove_small_holes, disk
 from skimage.measure import label, regionprops
 from skimage.segmentation import random_walker
 from scipy import ndimage
@@ -37,7 +39,7 @@ def autoThresholding(image2d,
         thresh = rank.otsu(image2d, disk(radius))
 
     if method == 'value_based':
-        binary = image2d >= value
+        thresh = value
         
     if method == 'triangle':
         thresh = threshold_triangle(image2d)
@@ -49,15 +51,26 @@ def autoThresholding(image2d,
 
 def count_objects(image2d):
     
-    image2d = image2d[400:900, 300:800]
+    image2d = image2d[600:900, 400:700]
     
+    # filter image
+    #image2d = median(image2d, selem=disk(3))
+    image2d = gaussian(image2d, sigma=2, mode='reflect')
     
     binary = autoThresholding(image2d, method='triangle')
     distance = ndimage.distance_transform_edt(binary)
-    local_maxi = peak_local_max(distance, indices=False, footprint=np.ones((5, 5)), labels=binary)
-    markers, num_features = ndimage.label(local_maxi)
-    labels = watershed(-distance, markers, mask=binary)
     
+    #distance[distance < 1] = 0
+    
+    local_maxi = peak_local_max(distance,
+                                #min_distance=3,
+                                indices=False,
+                                footprint=np.ones((13,13)),
+                                labels=binary)
+    
+    markers, num_features = ndimage.label(local_maxi)
+    
+    labels = watershed(-distance, markers, mask=binary, watershed_line=True)
     image_label_overlay = label2rgb(labels, image=image2d, bg_label=0)
     
     regions = regionprops(labels)
@@ -66,17 +79,23 @@ def count_objects(image2d):
     number_of_objects = len(regions) - 1
     
     # display the result
-    fig, ax = plt.subplots(2, 2, figsize=(16, 8))
+    fig, ax = plt.subplots(2, 2, figsize=(12, 12))
 
     ax[0, 0].imshow(image2d, cmap=plt.cm.gray, interpolation='nearest')
-    ax[0, 1].imshow(distance)
-    ax[1, 0].imshow(local_maxi)
+    ax[0, 1].imshow(binary)
+    ax[1, 0].imshow(distance)
     ax[1, 1].imshow(image_label_overlay)
+    #ax[1, 1].imshow(labels)
 
     ax[0, 0].set_title('Original', fontsize=12)
-    ax[0, 1].set_title('Distance Map', fontsize=12)
-    ax[1, 0].set_title('LocalMaxOriginal', fontsize=12)
+    ax[0, 1].set_title('Binary', fontsize=12)
+    ax[1, 0].set_title('Distance Map', fontsize=12)
     ax[1, 1].set_title('Labels', fontsize=12)
+    """
+    # display the result
+    fig, ax = plt.subplots(1, 1, figsize=(12, 12))
+    ax.imshow(image2d, cmap=plt.cm.gray, interpolation='nearest')
+    """
  
     
     for region in regionprops(labels):
@@ -87,13 +106,15 @@ def count_objects(image2d):
            rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
                                      fill=False, edgecolor='red', linewidth=2)
            ax[0,0].add_patch(rect)
+           #ax.add_patch(rect)
     
     #plt.show()
 
     return number_of_objects, labels
 
 
-filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
+#filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
+filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
 
 
 # Get an AICSImage object
