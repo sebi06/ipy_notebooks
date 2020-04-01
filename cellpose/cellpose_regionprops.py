@@ -9,9 +9,7 @@ from skimage import io, measure, segmentation
 model = models.Cellpose(device=mxnet.cpu(), model_type='cyto')
 
 files_raw = sorted(glob('*/*/*.tif'))
-files = list(
-    filter(lambda f: f.startswith('wt') or f.startswith('mut'), files_raw)
-)
+files = list(filter(lambda f: f.startswith('wt') or f.startswith('mut'), files_raw))
 images = map(io.imread, files)
 
 channels = [0, 0]
@@ -24,9 +22,7 @@ for filename, image in zip(files, images):
     print(f'{filename} started')
 
     # get cell mask
-    masks, _, _, _ = model.eval(
-        [image], rescale=None, channels=channels
-    )
+    masks, _, _, _ = model.eval([image], rescale=None, channels=channels)
     mask = segmentation.clear_border(masks[0])
 
     # make and save dataframe

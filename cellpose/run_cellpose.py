@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[3]:
-
-
 import numpy as np
 import time, os, sys
 import mxnet as mx
@@ -24,7 +21,6 @@ else:
     device = mx.cpu()
 
 
-# In[8]:
 
 
 # model_type='cyto' or model_type='nuclei'
@@ -41,6 +37,15 @@ model = models.Cellpose(device, model_type='cyto')
 
 files = ['cyto1.tif', 
          'cyto2.tif']
+
+
+
+filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
+
+
+# Get an AICSImage object
+img = AICSImage(filename)
+
 
 imgs = [plt.imread(f) for f in files]
 nimg = len(imgs)
@@ -59,7 +64,6 @@ channels = [[0,0], [0,0]]
 # channels = [2,1] # IF YOU HAVE G=cytoplasm and R=nucleus
 
 
-# In[9]:
 
 
 # if rescale is set to None, the size of the cells is estimated on a per image basis
@@ -67,10 +71,12 @@ channels = [[0,0], [0,0]]
 masks, flows, styles, diams = model.eval(imgs, rescale=None, channels=channels)
 
 
-# In[10]:
+
 
 
 from cellpose import plot, transforms
+
+
 
 for idx in range(nimg):
     img = transforms.reshape(imgs[idx], channels[idx])
@@ -85,7 +91,6 @@ for idx in range(nimg):
     plt.show()
 
 
-# In[ ]:
 
 
 
