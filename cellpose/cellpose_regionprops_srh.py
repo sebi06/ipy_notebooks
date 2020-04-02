@@ -155,7 +155,7 @@ def add_boundingbox(props, ax2plot):
         rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
                                   fill=False,
                                   edgecolor='red',
-                                  linewidth=2)
+                                  linewidth=1)
         ax2plot.add_patch(rect)
 
 
@@ -172,6 +172,7 @@ SizeZ = img.size_z
 
 chindex = 0  # channel containing the nuclei
 minsize = 200  # minimum object size
+maxsize = 3000  # maximum object size
 
 # define columns names for dataframe
 cols = ['S', 'T', 'Z', 'C', 'Number']
@@ -183,8 +184,8 @@ show_image = [0]
 # for testing
 SizeS = 1
 
-use_method = 'scikit'
-# use_method = 'cellpose'
+#use_method = 'scikit'
+use_method = 'cellpose'
 
 # load the ML model from cellpose when needed
 if use_method == 'cellpose':
@@ -255,7 +256,7 @@ for s in range(SizeS):
             ).set_index('label')
 
             # filter by size
-            props = props[props['area'] > minsize]
+            props = props[(props['area'] >= minsize) & (props['area'] <= maxsize)]
             #props = [r for r in props if r.area >= minsize]
 
             props['S'] = s
@@ -288,107 +289,4 @@ img.close()
 print('Done')
 
 print(objects)
-# print(results)
-
-
-"""
-# Get an AICSImage object
-img = AICSImage(filename)
-data = img.get_image_data("YX", S=0, T=0, Z=0, C=0)
-# data = data[600:900, 400:700]
-data = data[200:1000, 200:1000]
-img.close()
-
-
-model = models.Cellpose(device=mxnet.gpu(), model_type='nuclei')
-
-# files_raw = sorted(glob('*/*/*.tif'))
-# files = list(filter(lambda f: f.startswith('wt') or f.startswith('mut'), files_raw))
-# images = map(io.imread, files)
-
-channels = [0, 0]
-
-scale = 1.0  # µm per pixel
-# header = True
-
-files = [filename]
-images = [data]
-
-for filename, image in zip(files, images):
-    print(f'{filename} started')
-
-    # get cell mask
-    masks, _, _, _ = model.eval([image], rescale=None, channels=channels)
-    mask = segmentation.clear_border(masks[0])
-
-    image_label_overlay = label2rgb(mask, image=image, bg_label=0)
-
-    current_regions = regionprops(mask)
-
-    # make and save dataframe
-    props = pd.DataFrame(
-        measure.regionprops_table(
-            mask, properties=('label', 'area', 'centroid')
-        )
-    ).set_index('label')
-
-    props.loc[props['area'] >= 100]
-    # regions = [r for r in regions if r.area > 100]
-
-    props['filename'] = filename
-    props['type'] = 'test'
-    props['area (µm²)'] = props['area'] * (scale**2)
-    props.to_csv('out.csv', mode='a', header=header)
-    header = False
-
-    # make and save figure
-    marked = segmentation.mark_boundaries(image, mask, color=(0, 0, 0), mode='thick')
-    dpi = 100
-    figsize = (image.shape[1] / dpi, image.shape[0] / dpi)
-    # fig = plt.Figure(figsize=figsize, dpi=dpi)
-    fig, ax = plt.subplots(1, 2, figsize=(16, 8))
-
-    # ax = fig.add_axes([0, 0, 1, 1])
-    # ax.imshow(marked, interpolation='nearest', vmin=marked.min(), vmax=marked.max())
-    marked = exposure.rescale_intensity(marked, in_range='image', out_range=(0, 1))
-
-    # ax[0].imshow(marked, interpolation='nearest', clim=[marked.min(), marked.max()])
-    ax[0].imshow(image,
-                 cmap=plt.cm.gray,
-                 interpolation='nearest',
-                 clim=[image.min(), image.max() * 0.5])
-
-    ax[1].imshow(image_label_overlay,
-                 clim=[image.min(), image.max() * 0.5])
-
-    ax[0].set_title('Original', fontsize=12)
-    ax[1].set_title('Masks', fontsize=12)
-
-
-    for label, (area, y, x, fn, t, aa) in props.iterrows():
-
-        ax[0].text(x, y, str(int(label)),
-                   verticalalignment='center',
-                   horizontalalignment='center')
-
-        ax[1].text(x, y, str(int(label)),
-                   verticalalignment='center',
-                   horizontalalignment='center')
-
-    for region in regionprops(mask):
-        # take regions with large enough areas
-        if region.area >= 100:
-            # draw rectangle around segmented coins
-            minr, minc, maxr, maxc = region.bbox
-            rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
-                                      fill=False,
-                                      edgecolor='red',
-                                      linewidth=2)
-            ax[0].add_patch(rect)
-
-    plt.show()
-    output_filename = filename[:-4] + '_segmentation.png'
-    # fig.savefig(output_filename)
-
-    print(f'{filename} done')
-"""
+print(results)
