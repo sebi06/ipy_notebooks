@@ -1194,6 +1194,7 @@ def show_napari(array, metadata,
 
             # get the scalefactors from the metadata
             scalef = get_scalefactor(metadata)
+            
             # modify the tuple for the scales for napari
             scalefactors[posZ] = scalef['zx']
 
@@ -1221,7 +1222,8 @@ def show_napari(array, metadata,
                 print('Scaling Factors: ', scalefactors)
 
                 # get min-max values for initial scaling
-                clim = [channel.min(), np.round(channel.max() * 0.85)]
+                clim = calc_scaling(channel)
+                
                 if verbose:
                     print('Scaling: ', clim)
                 viewer.add_image(channel,
@@ -1284,7 +1286,7 @@ def show_napari(array, metadata,
                     print('Scaling Factors: ', scalefactors)
 
                     # get min-max values for initial scaling
-                    #clim = calc_scaling(channel)
+                    clim = calc_scaling(channel)
 
                     viewer.add_image(channel,
                                      name=chname,
@@ -1309,7 +1311,7 @@ def show_napari(array, metadata,
                 print('Scaling Factors: ', scalefactors)
 
                 # get min-max values for initial scaling
-                #clim = calc_scaling(array)
+                clim = calc_scaling(array)
 
                 viewer.add_image(array,
                                  name=chname,
