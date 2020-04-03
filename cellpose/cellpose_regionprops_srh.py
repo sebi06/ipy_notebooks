@@ -4,6 +4,8 @@ import time
 import os
 from glob import glob
 
+import tensorflow as tf
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -49,6 +51,20 @@ def set_device():
     return device
 
 
+def apply_watershed(binary, min_distance=30):
+
+    distance = ndimage.distance_transform_edt(binary)
+    local_maxi = peak_local_max(distance,
+                                min_distance=min_distance,
+                                indices=False,
+                                labels=binary)
+
+    markers, num_features = ndimage.label(local_maxi)
+    mask = watershed(-distance, markers, mask=binary, watershed_line=True)
+
+    return mask
+
+
 def autoThresholding(image2d,
                      method='triangle',
                      radius=10,
@@ -73,11 +89,12 @@ def autoThresholding(image2d,
     return binary
 
 
-def segment_nuclei_scikit(image2d,
-                          filtermethod='median',
-                          filtersize=3,
-                          threshold='triangle',
-                          watershed_fp=13):
+def segment_nuclei_threshold(image2d,
+                             filtermethod='median',
+                             filtersize=3,
+                             threshold='triangle',
+                             split_ws=True,
+                             mindist_ws=30):
 
     # filter image
     if filtermethod == 'median':
@@ -87,15 +104,14 @@ def segment_nuclei_scikit(image2d,
 
     # threshold image and run marker-based watershed
     binary = autoThresholding(image2d, method='triangle')
-    distance = ndimage.distance_transform_edt(binary)
-    local_maxi = peak_local_max(distance,
-                                # min_distance=3,
-                                indices=False,
-                                footprint=np.ones((watershed_fp, watershed_fp)),
-                                labels=binary)
 
-    markers, num_features = ndimage.label(local_maxi)
-    mask = watershed(-distance, markers, mask=binary, watershed_line=True)
+    # apply watershed
+    if split_ws:
+        mask = apply_watershed(binary, min_distance=min_peakdist)
+    if not split_ws:
+        # label the objects
+        mask, num_features = ndimage.label(binary)
+        mask = mask.astype(np.int)
 
     return mask
 
@@ -118,6 +134,44 @@ def segment_nuclei_cellpose(image2d, model,
     masks, _, _, _ = model.eval([image2d], rescale=rescale, channels=channels)
 
     return masks[0]
+
+
+def segment_zentf(image2d, model,
+                  classlabel=1,
+                  split_ws=True,
+                  mindist_ws=30):
+
+    # add add batch dimension (at the front) and channel dimension (at the end)
+    image2d = image2d[np.newaxis, ..., np.newaxis]
+
+    # Run prediction
+    prediction = model.predict(image2d)[0]  # Removes batch dimension
+
+    # Generate labels from one-hot encoded vectors
+    prediction_labels = np.argmax(prediction, axis=-1)
+
+    # get pixel values for all classes from prediction
+    #classes = np.unique(prediction_labels)
+
+    """
+    # get the desired class
+    background = 0
+    nuclei = 1
+    borders = 2
+    """
+
+    # extract desired class
+    binary = np.where(prediction_labels == classlabel, 1, 0)
+
+    # apply watershed
+    if split_ws:
+        mask = apply_watershed(binary, min_distance=min_peakdist)
+
+    if not split_ws:
+        # label the objects
+        mask, num_features = ndimage.label(binary)
+
+    return mask
 
 
 def plot_results(image, mask, props, add_bbox=True):
@@ -159,10 +213,22 @@ def add_boundingbox(props, ax2plot):
         ax2plot.add_patch(rect)
 
 
+def cutout_subimage(image2d,
+                    startx=0,
+                    starty=0,
+                    width=100,
+                    height=200):
+
+    image2d = image2d[starty: height, startx:width]
+
+    return image2d
+
 ###############################################################################
 
+
 # filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
-filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
+#filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
+filename = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96-A9_1024x1024_1.czi"
 
 # get AICSImageIO object using the python wrapper for libCZI
 img = AICSImage(filename)
@@ -171,8 +237,15 @@ SizeT = img.size_t
 SizeZ = img.size_z
 
 chindex = 0  # channel containing the nuclei
-minsize = 200  # minimum object size
-maxsize = 3000  # maximum object size
+minsize = 100  # minimum object size
+maxsize = 5000  # maximum object size
+
+# define cutout size for subimage
+cutimage = True
+startx = 0
+starty = 0
+width = 1024
+height = 1024
 
 # define columns names for dataframe
 cols = ['S', 'T', 'Z', 'C', 'Number']
@@ -184,8 +257,13 @@ show_image = [0]
 # for testing
 SizeS = 1
 
-#use_method = 'scikit'
-use_method = 'cellpose'
+use_method = 'scikit'
+#use_method = 'cellpose'
+#use_method = 'zentf'
+
+# use watershed for splitting
+use_ws = False
+min_peakdist = 25
 
 # load the ML model from cellpose when needed
 if use_method == 'cellpose':
@@ -196,6 +274,16 @@ if use_method == 'cellpose':
     # define list of channels for cellpose
     # channels = SizeS * SizeT * SizeZ * [0, 0]
     channels = [0, 0]
+
+if use_method == 'zentf':
+
+    # Load the model
+    MODEL_PATH = 'model_folder'
+    model = tf.keras.models.load_model(MODEL_PATH)
+
+    # Determine input shape required by the model and crop input image respectively
+    height, width = model.signatures["serving_default"].inputs[0].shape[1:3]
+    print('ZEN TF Model Tile Dimension : ', width, height)
 
 ###########################################################################
 
@@ -220,7 +308,12 @@ for s in range(SizeS):
                                          C=chindex)
 
             # cutout subimage
-            image2d = image2d[0:1000, 0:1000]
+            if cutimage:
+                image2d = cutout_subimage(image2d,
+                                          startx=startx,
+                                          starty=startx,
+                                          width=width,
+                                          height=height)
 
             if use_method == 'cellpose':
                 # get the mask for the current image
@@ -229,11 +322,18 @@ for s in range(SizeS):
                                                channels=channels)
 
             if use_method == 'scikit':
-                mask = segment_nuclei_scikit(image2d,
-                                             filtermethod='median',
-                                             filtersize=3,
-                                             threshold='triangle',
-                                             watershed_fp=25)
+                mask = segment_nuclei_threshold(image2d,
+                                                filtermethod='median',
+                                                filtersize=3,
+                                                threshold='triangle',
+                                                split_ws=use_ws,
+                                                mindist_ws=min_peakdist)
+
+            if use_method == 'zentf':
+                mask = segment_zentf(image2d, model,
+                                     classlabel=1,
+                                     split_ws=use_ws,
+                                     mindist_ws=min_peakdist)
 
             # clear the border
             mask = segmentation.clear_border(mask)
@@ -257,7 +357,7 @@ for s in range(SizeS):
 
             # filter by size
             props = props[(props['area'] >= minsize) & (props['area'] <= maxsize)]
-            #props = [r for r in props if r.area >= minsize]
+            # props = [r for r in props if r.area >= minsize]
 
             props['S'] = s
             props['T'] = t
@@ -266,7 +366,7 @@ for s in range(SizeS):
 
             # count the number of objects
             values['Number'] = props.shape[0]
-            #values['Number'] = len(regions) - 1
+            # values['Number'] = len(regions) - 1
             print('Objects found: ', values['Number'])
 
             # update dataframe containing the number of objects
@@ -289,4 +389,4 @@ img.close()
 print('Done')
 
 print(objects)
-print(results)
+# print(results)

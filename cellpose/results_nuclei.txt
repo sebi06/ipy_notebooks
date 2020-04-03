@@ -1,0 +1,13 @@
+File: testwell96-A9_1024x1024_0.czi
+
+ZEN 3.2 CZIAS
+
+Nucleus Detector V2 51% Confidence WS=7
+
+threshold           102    
+threshold + ws      192         
+cellpose            167
+zentf               149    
+zentf + ws          215
+
+min_peakdist = 25   
