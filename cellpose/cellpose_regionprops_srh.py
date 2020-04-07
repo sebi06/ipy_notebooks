@@ -228,7 +228,8 @@ def cutout_subimage(image2d,
 
 # filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
 #filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
-filename = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96-A9_1024x1024_1.czi"
+#filename = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96-A9_1024x1024_1.czi"
+filename = r'testwell96_A9_1024x1024_Nuc.czi'
 
 # get AICSImageIO object using the python wrapper for libCZI
 img = AICSImage(filename)
@@ -257,9 +258,9 @@ show_image = [0]
 # for testing
 SizeS = 1
 
-use_method = 'scikit'
+#use_method = 'scikit'
 #use_method = 'cellpose'
-#use_method = 'zentf'
+use_method = 'zentf'
 
 # use watershed for splitting
 use_ws = False
