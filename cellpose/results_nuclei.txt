@@ -2,6 +2,31 @@ File: testwell96-A9_1024x1024_0.czi
 
 ZEN 3.2 CZIAS
 
+###########################
+
+Compare_Cell_Nuc_ZEN.CZIAS
+
+Class Segmentation:
+
+Class 1:
+Median=3, Triangle, Min. Area=100, Min Hole Area=15, WS=7 -->
+
+Class 2:
+Nucleus Detector V2 51% Confidence, Min. Area=100, Min Hole Area=15, WS=7 -->
+
+##################################################
+
+Compare_Cell_Nuc_ZENonly.CZIAS
+
+DNN only:
+
+Nucleus Detector V2 0% Confidence, Min. Area=100, Min Hole Area=15, WS=7 --> 158
+Nucleus Detector V2 51% Confidence, Min. Area=100, Min Hole Area=15, WS=7 --> 159
+Nucleus Detector V2 90% Confidence, Min. Area=100, Min Hole Area=15, WS=7 --> 
+
+
+
+
 Nucleus Detector V2 51% Confidence WS=7
 
 threshold           102    

@@ -1,11 +1,27 @@
+# -*- coding: utf-8 -*-
+
+#################################################################
+# File        : test_nuclei_segmentation.py
+# Version     : 0.1
+# Author      : czsrh
+# Date        : 09.04.2020
+# Institution : Carl Zeiss Microscopy GmbH
+#
+#
+# Copyright (c) 2020 Carl Zeiss AG, Germany. All Rights Reserved.
+#################################################################
+
+
+#use_method = 'scikit'
+#use_method = 'cellpose'
+use_method = 'zentf'
+
 
 import sys
 import time
 import os
 from glob import glob
-
-import tensorflow as tf
-
+import logging
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,12 +29,7 @@ import matplotlib.colors as colors
 import matplotlib.patches as mpatches
 # import imgfileutils as imf
 from scipy import ndimage
-
-import mxnet
-from cellpose import plot, transforms
-from cellpose import models, utils
 from aicsimageio import AICSImage, imread
-
 from skimage import exposure
 from skimage.feature import peak_local_max
 from skimage.morphology import watershed
@@ -32,6 +43,31 @@ from skimage.filters import median, gaussian
 from skimage.morphology import closing, square
 from skimage.morphology import remove_small_objects, remove_small_holes, disk
 from skimage.measure import label, regionprops
+from MightyMosaic import MightyMosaic
+
+if use_method == 'cellpose':
+
+    try:
+        import mxnet
+        from cellpose import plot, transforms
+        from cellpose import models, utils
+
+    except ImportError as error:
+        # Output expected ImportErrors.
+        print(error.__class__.__name__ + ": " + error.msg)
+
+if use_method == 'zentf':
+
+    try:
+        # silence tensorflow output
+        from silence_tensorflow import silence_tensorflow
+        silence_tensorflow()
+        import tensorflow as tf
+        logging.getLogger("tensorflow").setLevel(logging.ERROR)
+        print('TensorFlow Version : ', tf.version.GIT_VERSION, tf.__version__)
+    except ImportError as error:
+        # Output expected ImportErrors.
+        print(error.__class__.__name__ + ": " + error.msg)
 
 # select plotting backend
 plt.switch_backend('Qt5Agg')
@@ -39,6 +75,7 @@ verbose = False
 
 
 def set_device():
+
     # check if GPU working, and if so use it
     use_gpu = utils.use_gpu()
     print('Use GPU: ', use_gpu)
@@ -53,13 +90,19 @@ def set_device():
 
 def apply_watershed(binary, min_distance=30):
 
+    # create distance map
     distance = ndimage.distance_transform_edt(binary)
+
+    # dtermine local maxima
     local_maxi = peak_local_max(distance,
                                 min_distance=min_distance,
                                 indices=False,
                                 labels=binary)
 
+    # label maxima
     markers, num_features = ndimage.label(local_maxi)
+
+    # apply watershed
     mask = watershed(-distance, markers, mask=binary, watershed_line=True)
 
     return mask
@@ -136,22 +179,10 @@ def segment_nuclei_cellpose(image2d, model,
     return masks[0]
 
 
-def segment_zentf(image2d, model,
-                  classlabel=1,
-                  split_ws=True,
-                  mindist_ws=30):
-
-    # add add batch dimension (at the front) and channel dimension (at the end)
-    image2d = image2d[np.newaxis, ..., np.newaxis]
-
-    # Run prediction
-    prediction = model.predict(image2d)[0]  # Removes batch dimension
+def get_binary_from_prediction(prediction, classlabel=1):
 
     # Generate labels from one-hot encoded vectors
     prediction_labels = np.argmax(prediction, axis=-1)
-
-    # get pixel values for all classes from prediction
-    #classes = np.unique(prediction_labels)
 
     """
     # get the desired class
@@ -163,15 +194,63 @@ def segment_zentf(image2d, model,
     # extract desired class
     binary = np.where(prediction_labels == classlabel, 1, 0)
 
-    # apply watershed
-    if split_ws:
-        mask = apply_watershed(binary, min_distance=min_peakdist)
+    return binary
 
-    if not split_ws:
-        # label the objects
-        mask, num_features = ndimage.label(binary)
 
-    return mask
+def segment_zentf(image2d, model, classlabel):
+
+    # segment a singe [X, Y] 2D image
+
+    # add add batch dimension (at the front) and channel dimension (at the end)
+    image2d = image2d[np.newaxis, ..., np.newaxis]
+
+    # Run prediction - array shape must be [1, 1024, 1024, 1]
+    prediction = model.predict(image2d)[0]  # Removes batch dimension
+
+    # get the binary image with the labels
+    binary = get_binary_from_prediction(prediction, classlabel=classlabel)
+
+    return binary
+
+
+def segment_zentf_tiling(image2d, model,
+                         tilesize=1024,
+                         classlabel=1,
+                         overlap_factor=1):
+
+    # create tile image
+    image2d_tiled = MightyMosaic.from_array(image2d, (tilesize, tilesize),
+                                            overlap_factor=overlap_factor,
+                                            fill_mode='reflect')
+
+    print('image2d_tiled shape : ', image2d_tiled.shape)
+    # get number of tiles
+    num_tiles = image2d_tiled.shape[0] * image2d_tiled.shape[1]
+    print('Number of Tiles: ', num_tiles)
+
+    # create array for the binary results
+    binary_tiled = image2d_tiled
+
+    ct = 0
+    for n1 in range(image2d_tiled.shape[0]):
+        for n2 in range(image2d_tiled.shape[1]):
+
+            ct += 1
+            print('Processing Tile : ', ct, ' Size : ', image2d_tiled[n1, n2, :, :].shape)
+
+            # extract a tile
+            tile = image2d_tiled[n1, n2, :, :]
+
+            # get the binary from the prediction for a single tile
+            binary_tile = segment_zentf(tile, model, classlabel=classlabel)
+
+            # cats the result into the output array
+            binary_tiled[n1, n2, :, :] = binary_tile
+
+    # created fused binary and covert to int
+    binary = binary_tiled.get_fusion().astype(int)
+
+    return binary
 
 
 def plot_results(image, mask, props, add_bbox=True):
@@ -223,12 +302,35 @@ def cutout_subimage(image2d,
 
     return image2d
 
+
+def add_padding(image2d, input_height=1024, input_width=1024):
+
+    if len(image2d.shape) == 2:
+        isrgb = False
+        image2d = image2d[..., np.newaxis]
+    else:
+        isrgb = True
+
+    padding_height = input_height - image2d.shape[0]
+    padding_width = input_width - image2d.shape[1]
+    padding_left, padding_right = padding_width // 2, padding_width - padding_width // 2
+    padding_top, padding_bottom = padding_height // 2, padding_height - padding_height // 2
+
+    image2d_padded = np.pad(image2d, ((padding_top, padding_bottom), (padding_left, padding_right), (0, 0)), 'reflect')
+
+    if not isrgb:
+        image2d_padded = np.squeeze(image2d_padded, axis=2)
+
+    return image2d_padded, (padding_top, padding_bottom, padding_left, padding_right)
+
+
 ###############################################################################
 
 
 # filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
 #filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
-filename = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96-A9_1024x1024_1.czi"
+#filename = r"C:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96-A1_1024x1024_0.czi"
+filename = r'segment_nuclei_CNN.czi'
 
 # get AICSImageIO object using the python wrapper for libCZI
 img = AICSImage(filename)
@@ -244,8 +346,8 @@ maxsize = 5000  # maximum object size
 cutimage = True
 startx = 0
 starty = 0
-width = 1024
-height = 1024
+width = 500
+height = 800
 
 # define columns names for dataframe
 cols = ['S', 'T', 'Z', 'C', 'Number']
@@ -257,16 +359,13 @@ show_image = [0]
 # for testing
 SizeS = 1
 
-use_method = 'scikit'
-#use_method = 'cellpose'
-#use_method = 'zentf'
-
 # use watershed for splitting
 use_ws = False
 min_peakdist = 25
 
 # load the ML model from cellpose when needed
 if use_method == 'cellpose':
+
     # load cellpose model for cell nuclei using GPU or CPU
     print('Loading Cellpose Model ...')
     model = models.Cellpose(device=set_device(), model_type='nuclei')
@@ -275,6 +374,7 @@ if use_method == 'cellpose':
     # channels = SizeS * SizeT * SizeZ * [0, 0]
     channels = [0, 0]
 
+# define model oath and load TF2 model when needed
 if use_method == 'zentf':
 
     # Load the model
@@ -282,7 +382,7 @@ if use_method == 'zentf':
     model = tf.keras.models.load_model(MODEL_PATH)
 
     # Determine input shape required by the model and crop input image respectively
-    height, width = model.signatures["serving_default"].inputs[0].shape[1:3]
+    tile_height, tile_width = model.signatures["serving_default"].inputs[0].shape[1:3]
     print('ZEN TF Model Tile Dimension : ', width, height)
 
 ###########################################################################
@@ -330,10 +430,39 @@ for s in range(SizeS):
                                                 mindist_ws=min_peakdist)
 
             if use_method == 'zentf':
-                mask = segment_zentf(image2d, model,
-                                     classlabel=1,
-                                     split_ws=use_ws,
-                                     mindist_ws=min_peakdist)
+
+                classlabel = 1
+
+                # check if tiling is required
+                if image2d.shape[0] > tile_height or image2d.shape[1] > tile_width:
+                    binary = segment_zentf_tiling(image2d, model,
+                                                  tilesize=tile_height,
+                                                  classlabel=classlabel,
+                                                  overlap_factor=2)
+
+                elif image2d.shape[0] == tile_height and image2d.shape[1] == tile_width:
+                    binary = segment_zentf(image2d, model, classlabel=classlabel)
+
+                elif image2d.shape[0] < tile_height or image2d.shape[1] < tile_width:
+
+                    # do padding
+                    image2d_padded, pad = add_padding(image2d,
+                                                      input_height=tile_height,
+                                                      input_width=tile_width)
+
+                    # run prediction on padded image
+                    binary_padded = segment_zentf(image2d_padded, model, classlabel=classlabel)
+
+                    # remove padding from result
+                    binary = binary_padded[pad[0]:tile_height - pad[1], pad[2]:tile_width - pad[3]]
+
+                # apply watershed
+                if use_ws:
+                    mask = apply_watershed(binary, min_distance=min_peakdist)
+
+                if not use_ws:
+                    # label the objects
+                    mask, num_features = ndimage.label(binary)
 
             # clear the border
             mask = segmentation.clear_border(mask)

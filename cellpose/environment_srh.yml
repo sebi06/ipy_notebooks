@@ -1,0 +1,34 @@
+name: cellpose_srh
+dependencies:
+  - python<=3.7
+  - pip
+  - jupyter
+  - xmltodict
+  - pandas
+  - seaborn
+  - mkl=2019.3
+  - numpy
+  - scikit-image
+  - numba>=0.43.1
+  - pyqt
+  - scipy
+  - matplotlib
+  - zarr
+  - lxml
+  - scipy
+  - autopep8
+  - pip:
+      - mxnet-mkl
+      - opencv_python
+      - pyqtgraph
+      - natsort
+      - google-cloud-storage
+      - tqdm
+      - czifile
+      - napari
+      - aicsimageio
+      - MightMosaic
+      - silence-tensorflow
+      - cellpose
+# conda env create -f environment_srh.yml
+# conda env update --name cellpose_srh --file environment_srh.yml
