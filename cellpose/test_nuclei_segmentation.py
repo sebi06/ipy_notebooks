@@ -2,7 +2,7 @@
 
 #################################################################
 # File        : test_nuclei_segmentation.py
-# Version     : 0.1
+# Version     : 0.2
 # Author      : czsrh
 # Date        : 09.04.2020
 # Institution : Carl Zeiss Microscopy GmbH
