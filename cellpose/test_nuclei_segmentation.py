@@ -12,8 +12,8 @@
 #################################################################
 
 
-#use_method = 'scikit'
-#use_method = 'cellpose'
+# use_method = 'scikit'
+# use_method = 'cellpose'
 use_method = 'zentf'
 
 
@@ -88,16 +88,17 @@ def set_device():
     return device
 
 
-def apply_watershed(binary, min_distance=30):
+def apply_watershed(binary, min_distance=30, footprint=3):
 
     # create distance map
     distance = ndimage.distance_transform_edt(binary)
 
     # dtermine local maxima
     local_maxi = peak_local_max(distance,
-                                min_distance=min_distance,
+                                # min_distance=min_distance,
                                 indices=False,
-                                labels=binary)
+                                labels=binary,
+                                footprint=np.ones((footprint, footprint)))
 
     # label maxima
     markers, num_features = ndimage.label(local_maxi)
@@ -328,8 +329,8 @@ def add_padding(image2d, input_height=1024, input_width=1024):
 
 
 # filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
-#filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
-#filename = r"C:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96-A1_1024x1024_0.czi"
+# filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
+# filename = r"C:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96-A1_1024x1024_0.czi"
 filename = r'segment_nuclei_CNN.czi'
 
 # get AICSImageIO object using the python wrapper for libCZI
@@ -360,8 +361,8 @@ show_image = [0]
 SizeS = 1
 
 # use watershed for splitting
-use_ws = False
-min_peakdist = 25
+use_ws = True
+min_peakdist = 30
 
 # load the ML model from cellpose when needed
 if use_method == 'cellpose':
@@ -458,7 +459,7 @@ for s in range(SizeS):
 
                 # apply watershed
                 if use_ws:
-                    mask = apply_watershed(binary, min_distance=min_peakdist)
+                    mask = apply_watershed(binary, min_distance=min_peakdist, footprint=35)
 
                 if not use_ws:
                     # label the objects
