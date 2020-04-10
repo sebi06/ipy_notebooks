@@ -12,7 +12,7 @@
 #################################################################
 
 
-# use_method = 'scikit'
+#use_method = 'scikit'
 # use_method = 'cellpose'
 use_method = 'zentf'
 
@@ -31,17 +31,21 @@ import matplotlib.patches as mpatches
 from scipy import ndimage
 from aicsimageio import AICSImage, imread
 from skimage import exposure
+from skimage.morphology import watershed, dilation
 from skimage.feature import peak_local_max
-from skimage.morphology import watershed
+from skimage.measure import label
+from scipy.ndimage import distance_transform_edt
 from skimage.segmentation import random_walker
 from skimage import io, measure, segmentation
 from skimage.filters import threshold_otsu, threshold_triangle, rank
 from skimage.segmentation import clear_border
 from skimage.color import label2rgb
+from skimage.exposure import rescale_intensity
 from skimage.util import invert
 from skimage.filters import median, gaussian
 from skimage.morphology import closing, square
-from skimage.morphology import remove_small_objects, remove_small_holes, disk
+from skimage.morphology import remove_small_objects, remove_small_holes
+from skimage.morphology import disk, square, ball
 from skimage.measure import label, regionprops
 from MightyMosaic import MightyMosaic
 
@@ -88,23 +92,64 @@ def set_device():
     return device
 
 
-def apply_watershed(binary, min_distance=30, footprint=3):
+def apply_watershed(binary, min_distance=10):
 
     # create distance map
     distance = ndimage.distance_transform_edt(binary)
 
-    # dtermine local maxima
+    # determine local maxima
     local_maxi = peak_local_max(distance,
-                                # min_distance=min_distance,
+                                min_distance=min_distance,
                                 indices=False,
-                                labels=binary,
-                                footprint=np.ones((footprint, footprint)))
+                                labels=binary)
 
     # label maxima
     markers, num_features = ndimage.label(local_maxi)
 
     # apply watershed
-    mask = watershed(-distance, markers, mask=binary, watershed_line=True)
+    mask = watershed(-distance, markers,
+                     mask=binary,
+                     watershed_line=True).astype(np.int)
+
+    return mask
+
+
+def apply_watershed_adv(image2d,
+                        segmented,
+                        filtermethod_ws='median',
+                        filtersize_ws=3,
+                        min_distance=2,
+                        radius=1):
+
+    # convert to float
+    image2d = image2d.astype(np.float)
+
+    # rescale 0-1
+    image2d = rescale_intensity(image2d, in_range='image', out_range=(0, 1))
+
+    # filter image
+    if filtermethod == 'median':
+        image2d = median(image2d, selem=disk(filtersize_ws))
+    if filtermethod == 'gauss':
+        image2d = gaussian(image2d, sigma=filtersize_ws, mode='reflect')
+
+    # create the seeds
+    peaks = peak_local_max(image2d,
+                           labels=label(segmented),
+                           min_distance=min_distance,
+                           indices=False)
+
+    # create the seeds
+    seed = dilation(peaks, selem=disk(radius))
+
+    # create watershed map
+    watershed_map = -1 * distance_transform_edt(segmented)
+
+    # create mask
+    mask = watershed(watershed_map,
+                     markers=label(seed),
+                     mask=segmented,
+                     watershed_line=True).astype(np.int)
 
     return mask
 
@@ -133,12 +178,14 @@ def autoThresholding(image2d,
     return binary
 
 
-def segment_nuclei_threshold(image2d,
-                             filtermethod='median',
-                             filtersize=3,
-                             threshold='triangle',
-                             split_ws=True,
-                             mindist_ws=30):
+def segment_threshold(image2d,
+                      filtermethod='median',
+                      filtersize=3,
+                      threshold='triangle',
+                      split_ws=True,
+                      min_distance=30,
+                      ws_method='ws_adv',
+                      radius=1):
 
     # filter image
     if filtermethod == 'median':
@@ -147,11 +194,20 @@ def segment_nuclei_threshold(image2d,
         image2d = gaussian(image2d, sigma=filtersize, mode='reflect')
 
     # threshold image and run marker-based watershed
-    binary = autoThresholding(image2d, method='triangle')
+    binary = autoThresholding(image2d, method=threshold)
 
     # apply watershed
     if split_ws:
-        mask = apply_watershed(binary, min_distance=min_peakdist)
+
+        if ws_method == 'ws':
+            mask = apply_watershed(binary,
+                                   min_distance=min_distance)
+
+        if ws_method == 'ws_adv':
+            mask = apply_watershed_adv(image2d, binary,
+                                       min_distance=min_distance,
+                                       radius=radius)
+
     if not split_ws:
         # label the objects
         mask, num_features = ndimage.label(binary)
@@ -340,14 +396,14 @@ SizeT = img.size_t
 SizeZ = img.size_z
 
 chindex = 0  # channel containing the nuclei
-minsize = 100  # minimum object size
+minsize = 200  # minimum object size
 maxsize = 5000  # maximum object size
 
 # define cutout size for subimage
-cutimage = True
+cutimage = False
 startx = 0
 starty = 0
-width = 500
+width = 900
 height = 800
 
 # define columns names for dataframe
@@ -360,9 +416,20 @@ show_image = [0]
 # for testing
 SizeS = 1
 
+# threshold parameters
+# filtermethod = 'median'
+filtermethod = None
+filtersize = 3
+threshold = 'triangle'
+
 # use watershed for splitting
 use_ws = True
-min_peakdist = 30
+ws_method = 'ws_adv'
+filtermethod_ws = 'median'
+filtersize_ws = 3
+min_distance = 5
+radius_dilation = 1
+
 
 # load the ML model from cellpose when needed
 if use_method == 'cellpose':
@@ -378,11 +445,14 @@ if use_method == 'cellpose':
 # define model oath and load TF2 model when needed
 if use_method == 'zentf':
 
+    # define tile overlap factor for MightyMosaic
+    overlapfactor = 1
+
     # Load the model
     MODEL_PATH = 'model_folder'
     model = tf.keras.models.load_model(MODEL_PATH)
 
-    # Determine input shape required by the model and crop input image respectively
+    # Determine input shape required by the model and crop input image
     tile_height, tile_width = model.signatures["serving_default"].inputs[0].shape[1:3]
     print('ZEN TF Model Tile Dimension : ', width, height)
 
@@ -423,12 +493,14 @@ for s in range(SizeS):
                                                channels=channels)
 
             if use_method == 'scikit':
-                mask = segment_nuclei_threshold(image2d,
-                                                filtermethod='median',
-                                                filtersize=3,
-                                                threshold='triangle',
-                                                split_ws=use_ws,
-                                                mindist_ws=min_peakdist)
+                mask = segment_threshold(image2d,
+                                         filtermethod=filtermethod,
+                                         filtersize=filtersize,
+                                         threshold=threshold,
+                                         split_ws=use_ws,
+                                         min_distance=min_distance,
+                                         ws_method=ws_method,
+                                         radius=radius_dilation)
 
             if use_method == 'zentf':
 
@@ -439,10 +511,11 @@ for s in range(SizeS):
                     binary = segment_zentf_tiling(image2d, model,
                                                   tilesize=tile_height,
                                                   classlabel=classlabel,
-                                                  overlap_factor=2)
+                                                  overlap_factor=overlapfactor)
 
                 elif image2d.shape[0] == tile_height and image2d.shape[1] == tile_width:
-                    binary = segment_zentf(image2d, model, classlabel=classlabel)
+                    binary = segment_zentf(image2d, model,
+                                           classlabel=classlabel)
 
                 elif image2d.shape[0] < tile_height or image2d.shape[1] < tile_width:
 
@@ -452,21 +525,28 @@ for s in range(SizeS):
                                                       input_width=tile_width)
 
                     # run prediction on padded image
-                    binary_padded = segment_zentf(image2d_padded, model, classlabel=classlabel)
+                    binary_padded = segment_zentf(image2d_padded, model,
+                                                  classlabel=classlabel)
 
                     # remove padding from result
                     binary = binary_padded[pad[0]:tile_height - pad[1], pad[2]:tile_width - pad[3]]
 
                 # apply watershed
                 if use_ws:
-                    mask = apply_watershed(binary, min_distance=min_peakdist, footprint=35)
-
+                    if ws_method == 'ws':
+                        mask = apply_watershed(binary,
+                                               min_distance=min_distance)
+                    if ws_method == 'ws_adv':
+                        mask = apply_watershed_adv(image2d, binary,
+                                                   min_distance=min_distance,
+                                                   radius=radius_dilation)
                 if not use_ws:
                     # label the objects
                     mask, num_features = ndimage.label(binary)
+                    mask = mask.astype(np.int)
 
-            # clear the border
-            mask = segmentation.clear_border(mask)
+                # clear the border
+                mask = segmentation.clear_border(mask)
 
             # measure region properties
             to_measure = ('label',
