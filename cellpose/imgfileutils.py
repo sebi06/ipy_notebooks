@@ -496,8 +496,10 @@ def get_metadata_czi(filename, dim2none=False):
             # get the well information
             metadata['Well_Indices'].append(well['@Index'])
             metadata['Well_PositionNames'].append(well['@Name'])
-            metadata['Well_ColId'].append(well['Shape']['ColumnIndex'])
-            metadata['Well_RowId'].append(well['Shape']['RowIndex'])
+            # metadata['Well_ColId'].append(well['Shape']['ColumnIndex'])
+            # metadata['Well_RowId'].append(well['Shape']['RowIndex'])
+            metadata['Well_ColId'].append(np.int(well['Shape']['ColumnIndex']))
+            metadata['Well_RowId'].append(np.int(well['Shape']['RowIndex']))
 
             # more than one scene detected
             if metadata['SizeS'] > 1:
@@ -1384,7 +1386,7 @@ def writexml_ometiff(filename, xmlsuffix='_OMETIFF_MetaData.xml'):
         ext = '.ome.tif'
 
     with tifffile.TiffFile(filename) as tif:
-            #omexml_string = tif[0].image_description.decode('utf-8')
+        #omexml_string = tif[0].image_description.decode('utf-8')
         omexml_string = tif[0].image_description
 
     # get tree from string

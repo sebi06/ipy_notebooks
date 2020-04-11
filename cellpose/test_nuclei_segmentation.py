@@ -2,19 +2,18 @@
 
 #################################################################
 # File        : test_nuclei_segmentation.py
-# Version     : 0.2
+# Version     : 0.3
 # Author      : czsrh
-# Date        : 09.04.2020
+# Date        : 11.04.2020
 # Institution : Carl Zeiss Microscopy GmbH
-#
 #
 # Copyright (c) 2020 Carl Zeiss AG, Germany. All Rights Reserved.
 #################################################################
 
 
-#use_method = 'scikit'
+use_method = 'scikit'
 # use_method = 'cellpose'
-use_method = 'zentf'
+# use_method = 'zentf'
 
 
 import sys
@@ -24,10 +23,11 @@ from glob import glob
 import logging
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.patches as mpatches
-# import imgfileutils as imf
+import imgfileutils as imf
 from scipy import ndimage
 from aicsimageio import AICSImage, imread
 from skimage import exposure
@@ -188,13 +188,15 @@ def segment_threshold(image2d,
                       radius=1):
 
     # filter image
+    if filtermethod == 'none':
+        image2d_filtered = image2d
     if filtermethod == 'median':
-        image2d = median(image2d, selem=disk(filtersize))
+        image2d_filtered = median(image2d, selem=disk(filtersize))
     if filtermethod == 'gauss':
-        image2d = gaussian(image2d, sigma=filtersize, mode='reflect')
+        image2d_filtered = gaussian(image2d, sigma=filtersize, mode='reflect')
 
     # threshold image and run marker-based watershed
-    binary = autoThresholding(image2d, method=threshold)
+    binary = autoThresholding(image2d_filtered, method=threshold)
 
     # apply watershed
     if split_ws:
@@ -381,13 +383,144 @@ def add_padding(image2d, input_height=1024, input_width=1024):
     return image2d_padded, (padding_top, padding_bottom, padding_left, padding_right)
 
 
+def showheatmap(heatmap, parameter2display,
+                fontsize_title=12,
+                fontsize_label=10,
+                colormap='Blues',
+                linecolor='black',
+                linewidth=1.0,
+                save=False,
+                savename='Heatmap.png',
+                robust=True,
+                filename='Test.czi',
+                dpi=100):
+
+    # create figure with subplots
+    fig, ax = plt.subplots(1, 1, figsize=(10, 8))
+
+    # create the heatmap
+    ax = sns.heatmap(heatmap,
+                     ax=ax,
+                     cmap=colormap,
+                     linecolor=linecolor,
+                     linewidths=linewidth,
+                     square=True,
+                     robust=robust,
+                     annot=False,
+                     cbar_kws={"shrink": 0.68})
+
+    # customize the plot to your needs
+    ax.set_title(parameter2display,
+                 fontsize=fontsize_title,
+                 fontweight='normal')
+
+    for tick in ax.xaxis.get_major_ticks():
+        tick.label.set_fontsize(fontsize_label)
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(fontsize_label)
+
+    # modify the labels of the colorbar
+    cax = plt.gcf().axes[-1]
+    cax.tick_params(labelsize=fontsize_label)
+
+    if save:
+        savename = filename[:-4] + '_HM_' + parameter2display + '.png'
+        fig.savefig(savename,
+                    dpi=dpi,
+                    orientation='portrait',
+                    transparent=False,
+                    frameon=False)
+        print('Heatmap image saved as: ', savename)
+    else:
+        savename = False
+
+    return savename
+
+
+def getrowandcolumn(platetype=96):
+    """
+    :param platetype - number total wells of plate (6, 24, 96, 384 or 1536)
+    :return nr - number of rows of wellplate
+    :return nc - number of columns for wellplate
+    """
+    platetype = int(platetype)
+
+    if platetype == 6:
+        nr = 2
+        nc = 3
+    elif platetype == 24:
+        nr = 4
+        nc = 6
+    elif platetype == 96:
+        nr = 8
+        nc = 12
+    elif platetype == 384:
+        nr = 16
+        nc = 24
+    elif platetype == 1536:
+        nr = 32
+        nc = 48
+
+    return nr, nc
+
+
+def create_heatmap(platetype=96):
+
+    # create heatmap based on the platetype
+    nr, nc = getrowandcolumn(platetype=platetype)
+    heatmap_array = np.full([nr, nc], np.nan)
+
+    return heatmap_array
+
+
+def convert_array_to_heatmap(hmarray, nr, nc):
+
+    # get the labels for a well plate and create a data frame from the numpy array
+    lx, ly = extract_labels(nr, nc)
+    heatmap_dataframe = pd.DataFrame(hmarray, index=ly, columns=lx)
+
+    return heatmap_dataframe
+
+
+def extract_labels(nr, nc):
+    """
+    Define helper function to be able to extract the well labels depending
+    on the actual wellplate type. Currently supports 96, 384 and 1536 well plates.
+
+    :param nr: number of rows of the wellplate, e.g. 8 (A-H) for a 96 wellplate
+    :param nc: number of columns of the wellplate, e.g. 12 (1-12) for a 96 wellplate
+    :return: lx, ly are list containing the actual row and columns IDs
+    """
+
+    # labeling schemes
+    labelX = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12',
+              '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24',
+              '25', '26', '27', '28', '29', '30', '31', '32', '33', '34', '35', '36',
+              '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47', '48', ]
+
+    labelY = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+              'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF']
+
+    lx = labelX[0:nc]
+    ly = labelY[0:nr]
+
+    return lx, ly
+
 ###############################################################################
 
 
-# filename = r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi'
-# filename = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
-# filename = r"C:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96-A1_1024x1024_0.czi"
-filename = r'segment_nuclei_CNN.czi'
+filenames = [r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/B4_B5_S=8_4Pos_perWell_T=2_Z=1_CH=1.czi',
+             r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/96well-SingleFile-Scene-05-A5-A5.czi',
+             r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi',
+             r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi',
+             r'C:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96 - A1_1024x1024_0.czi',
+             r'segment_nuclei_CNN.czi']
+
+filename = filenames[2]
+
+# define platetype and get number of rows and columns
+platetype = 96
+nr, nc = getrowandcolumn(platetype=platetype)
 
 # get AICSImageIO object using the python wrapper for libCZI
 img = AICSImage(filename)
@@ -395,16 +528,16 @@ SizeS = img.size_s
 SizeT = img.size_t
 SizeZ = img.size_z
 
-chindex = 0  # channel containing the nuclei
-minsize = 200  # minimum object size
-maxsize = 5000  # maximum object size
+chindex = 0  # channel containing the objects, e.g. the nuclei
+minsize = 200  # minimum object size [pixel]
+maxsize = 5000  # maximum object size [pixel]
 
 # define cutout size for subimage
 cutimage = False
 startx = 0
 starty = 0
-width = 900
-height = 800
+width = 600
+height = 600
 
 # define columns names for dataframe
 cols = ['S', 'T', 'Z', 'C', 'Number']
@@ -414,11 +547,11 @@ objects = pd.DataFrame(columns=cols)
 show_image = [0]
 
 # for testing
-SizeS = 1
+#SizeS = 1
 
 # threshold parameters
-# filtermethod = 'median'
-filtermethod = None
+filtermethod = 'median'
+#filtermethod = None
 filtersize = 3
 threshold = 'triangle'
 
@@ -427,9 +560,8 @@ use_ws = True
 ws_method = 'ws_adv'
 filtermethod_ws = 'median'
 filtersize_ws = 3
-min_distance = 5
+min_distance = 15
 radius_dilation = 1
-
 
 # load the ML model from cellpose when needed
 if use_method == 'cellpose':
@@ -460,6 +592,11 @@ if use_method == 'zentf':
 
 image_counter = 0
 results = pd.DataFrame()
+
+# get the CZI metadata
+# get the metadata from the czi file
+md = imf.get_metadata_czi(filename, dim2none=False)
+
 
 for s in range(SizeS):
     for t in range(SizeT):
@@ -569,6 +706,12 @@ for s in range(SizeS):
             props = props[(props['area'] >= minsize) & (props['area'] <= maxsize)]
             # props = [r for r in props if r.area >= minsize]
 
+            # add wellinformation for CZI metadata
+            props['WellId'] = md['Well_ArrayNames'][s]
+            props['Well_ColId'] = md['Well_ColId'][s]
+            props['Well_RowId'] = md['Well_RowId'][s]
+
+            # add plane indicies
             props['S'] = s
             props['T'] = t
             props['Z'] = z
@@ -580,7 +723,8 @@ for s in range(SizeS):
             print('Objects found: ', values['Number'])
 
             # update dataframe containing the number of objects
-            objects = objects.append(pd.DataFrame(values, index=[0]), ignore_index=True)
+            objects = objects.append(pd.DataFrame(values, index=[0]),
+                                     ignore_index=True)
 
             results = results.append(props, ignore_index=True)
 
@@ -590,13 +734,55 @@ for s in range(SizeS):
                 plot_results(image2d, mask, props, add_bbox=True)
 
 # reorder dataframe with single objects
-new_order = list(results.columns[-4:]) + list(results.columns[:-4])
+new_order = list(results.columns[-7:]) + list(results.columns[:-7])
 results = results.reindex(columns=new_order)
-
 
 img.close()
 
 print('Done')
 
-print(objects)
-# print(results)
+# create heatmap array with NaNs
+heatmap_numobj = create_heatmap(platetype=platetype)
+heatmap_param = create_heatmap(platetype=platetype)
+
+for well in md['WellCounter']:
+    # extract all entries for specific well
+    well_results = results.loc[results['WellId'] == well]
+
+    # get the descriptive statistics for specific well
+    stats = well_results.describe(include='all')
+
+    # get the column an row indices for specific well
+    col = np.int(stats['Well_ColId']['mean'])
+    row = np.int(stats['Well_RowId']['mean'])
+
+    # add value for number of objects to heatmap_numobj
+    heatmap_numobj[row - 1, col - 1] = stats['WellId']['count']
+
+    # add value for specifics params to heatmap
+    heatmap_param[row - 1, col - 1] = stats['area']['mean']
+
+df_numobjects = convert_array_to_heatmap(heatmap_numobj, nr, nc)
+df_params = convert_array_to_heatmap(heatmap_param, nr, nc)
+
+# show a heatmap
+
+# define parameter to display a single heatmap
+parameter2display = 'ObjectNumbers'
+colormap = 'YlGnBu'
+
+# show the heatmap for a single parameter
+savename_single = showheatmap(df_numobjects, parameter2display,
+                              fontsize_title=16,
+                              fontsize_label=16,
+                              colormap=colormap,
+                              linecolor='black',
+                              linewidth=3.0,
+                              save=False,
+                              filename=filename,
+                              dpi=300)
+
+# print(objects)
+# print(results[:5])
+
+plt.show()
