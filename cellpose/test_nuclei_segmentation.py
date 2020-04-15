@@ -331,13 +331,23 @@ def plot_results(image, mask, props, add_bbox=True):
     ax[1].set_title('Masks', fontsize=12)
 
     if add_bbox:
-        add_boundingbox(props, ax[0])
+        ax[0] = add_boundingbox(props, ax[0])
 
     plt.show()
 
 
 def add_boundingbox(props, ax2plot):
+    """Add bounding boxes for objects to the current axes
 
+    Arguments:
+        props {Pandas DataFrame} -- DataFrame contained the measured parameters
+                                    for the bounding boxes
+        ax2plot {MatplotLib axes} -- The Axes contained the images where
+                                     the boxes should be drawn
+
+    Returns:
+        [MatplotLib axes] -- The axes inclusing the bounding boxes.
+    """
     for index, row in props.iterrows():
 
         minr = row['bbox-0']
@@ -349,6 +359,8 @@ def add_boundingbox(props, ax2plot):
                                   edgecolor='red',
                                   linewidth=1)
         ax2plot.add_patch(rect)
+
+    return ax2plot
 
 
 def cutout_subimage(image2d,
@@ -474,8 +486,18 @@ def create_heatmap(platetype=96):
 
 
 def convert_array_to_heatmap(hmarray, nr, nc):
+    """Get the labels for a well plate and create a data frame from the numpy array
 
-    # get the labels for a well plate and create a data frame from the numpy array
+    Arguments:
+        hmarray {ndarray} -- The numpy array containing the actual heatmap.
+        nr {integer} -- number of rows for the well plate
+        nc {integer} -- number of colums for the wellplate
+
+    Returns:
+        [Pandas DataFrame] -- A Pandas dataframe with the respective
+                              row and columns labels
+    """
+
     lx, ly = extract_labels(nr, nc)
     heatmap_dataframe = pd.DataFrame(hmarray, index=ly, columns=lx)
 
