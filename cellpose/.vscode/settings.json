@@ -1,5 +1,5 @@
 {
-  "python.pythonPath": "/home/sebi06/miniconda3/envs/imageanalysis/bin/python",
+  "python.pythonPath": "C:\\ProgramData\\Anaconda3\\envs\\imageanalysis\\python.exe",
   "python.dataScience.debugJustMyCode": false,
   "debug.allowBreakpointsEverywhere": true
 }
