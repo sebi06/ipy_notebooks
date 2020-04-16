@@ -1179,7 +1179,7 @@ def get_array_czi(filename,
     return cziarray, metadata, additional_metadata_czi
 
 
-def get_array_pylibczi(filename):
+def get_array_pylibczi(filename, return_addmd=False, **kwargs):
 
     metadata = get_metadata_czi(filename)
     additional_metadata_czi = get_additional_metadata_czi(filename)
