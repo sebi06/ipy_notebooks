@@ -1,9 +1,6 @@
 
 import imgfileutils as imf
 from aicsimageio import AICSImage, imread, imread_dask
-#import numpy as np
-#import napari
-#import dask.array as da
 
 
 def show_napari(array, metadata,
@@ -127,12 +124,12 @@ def show_napari(array, metadata,
                              is_pyramid=False)
 
 
-#imagefile = r'testdata/CellDivision_T=10_Z=15_CH=2_DCV_small.czi'
-imagefile = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi'
-#imagefile = r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\384well_DAPI.czi'
-#imagefile = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\WP384_2CH_4Pos_A4-10_DAPI_GFP.czi"
-#imagefile = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\WP384_2CH_4Pos_A4-10_DAPI_GFP_C1.czi"
-#imagefile = r"C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\WP384_2CH_4Pos_A4-10_DAPI_GFP_C2.czi"
+# imagefile = r'testdata/CellDivision_T=10_Z=15_CH=2_DCV_small.czi'
+imagefile = r'c:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96.czi'
+# imagefile = r'c:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\384well_DAPI.czi'
+# imagefile = r"c:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\WP384_2CH_4Pos_A4-10_DAPI_GFP.czi"
+# imagefile = r"c:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\WP384_2CH_4Pos_A4-10_DAPI_GFP_C1.czi"
+# imagefile = r"c:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\WP384_2CH_4Pos_A4-10_DAPI_GFP_C2.czi"
 
 # parse the CZI metadata return the metadata dictionary and additional information
 metadata = imf.get_metadata_czi(imagefile, dim2none=False)
@@ -147,7 +144,7 @@ additional_metadata = imf.get_additional_metadata_czi(imagefile)
 stack = imread_dask(imagefile)
 
 # option 3
-stack = imread(imagefile)
+#stack = imread(imagefile)
 
 
 # from dask_image.imread import imread

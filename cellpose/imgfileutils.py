@@ -22,11 +22,12 @@ import napari
 
 
 def get_imgtype(imagefile):
-    """
-    Returns the type of the image based on the file extension - no magic
+    """Returns the type of the image based on the file extension - no magic
 
     :param imagefile: filename of the image
-    :return: imgtype - string specifying the image type
+    :type imagefile: str
+    :return: string specifying the image type
+    :rtype: str
     """
 
     imgtype = None
@@ -55,10 +56,10 @@ def get_imgtype(imagefile):
 
 
 def create_metadata_dict():
-    """
-    A Python dictionary will be created to hold the relevant metadata.
+    """A Python dictionary will be created to hold the relevant metadata.
 
-    :return: metadata - dictionary with keys for the relevant metadata
+    :return: dictionary with keys for the relevant metadata
+    :rtype: dict
     """
 
     metadata = {'Directory': None,
@@ -104,14 +105,17 @@ def create_metadata_dict():
 
 
 def get_metadata(imagefile, series=0):
-    """
-    Returns a dictionary with metadata depending on the image type
+    """Returns a dictionary with metadata depending on the image type.
     Only CZI and OME-TIFF are currently supported.
 
     :param imagefile: filename of the image
-    :param series: series of OME-TIFF file
-    :return: metadata - dictionary with the metainformation
-    :return: additional_mdczi - dictionary with additional CZI metadata
+    :type imagefile: str
+    :param series: series of OME-TIFF file, , defaults to 0
+    :type series: int, optional
+    :return: metadata - dict with the metainformation
+    :rtype: dict
+    :return: additional_mdczi - dict with additional the metainformation for CZI only
+    :rtype: dict
     """
 
     # get the image type
@@ -143,13 +147,16 @@ def get_metadata(imagefile, series=0):
 
 
 def get_metadata_ometiff(filename, omemd, series=0):
-    """
-    Returns a dictionary with OME-TIFF metadata.
+    """Returns a dictionary with OME-TIFF metadata.
 
     :param filename: filename of the OME-TIFF image
+    :type filename: str
     :param omemd: OME-XML information
-    :param series
-    :return: metadata - dictionary with the relevant OME-TIFF metainformation
+    :type omemd: OME-XML
+    :param series: Image Series, defaults to 0
+    :type series: int, optional
+    :return: dictionary with the relevant OME-TIFF metainformation
+    :rtype: dict
     """
 
     # create dictionary for metadata and get OME-XML data
@@ -233,31 +240,37 @@ def get_metadata_czi(filename, dim2none=False):
     Returns a dictionary with CZI metadata.
 
     Information CZI Dimension Characters:
-    '0': 'Sample',  # e.g. RGBA
-    'X': 'Width',
-    'Y': 'Height',
-    'C': 'Channel',
-    'Z': 'Slice',  # depth
-    'T': 'Time',
-    'R': 'Rotation',
-    'S': 'Scene',  # contiguous regions of interest in a mosaic image
-    'I': 'Illumination',  # direction
-    'B': 'Block',  # acquisition
-    'M': 'Mosaic',  # index of tile for compositing a scene
-    'H': 'Phase',  # e.g. Airy detector fibers
-    'V': 'View',  # e.g. for SPIM
+    - '0': 'Sample',  # e.g. RGBA
+    - 'X': 'Width',
+    - 'Y': 'Height',
+    - 'C': 'Channel',
+    - 'Z': 'Slice',  # depth
+    - 'T': 'Time',
+    - 'R': 'Rotation',
+    - 'S': 'Scene',  # contiguous regions of interest in a mosaic image
+    - 'I': 'Illumination',  # direction
+    - 'B': 'Block',  # acquisition
+    - 'M': 'Mosaic',  # index of tile for compositing a scene
+    - 'H': 'Phase',  # e.g. Airy detector fibers
+    - 'V': 'View',  # e.g. for SPIM
 
     :param filename: filename of the CZI image
-    :param dim2none: option to set non-existing dimension to None
+    :type filename: str
+    :param dim2none: option to set non-existing dimension to None, defaults to False
+    :type dim2none: bool, optional
     :return: metadata - dictionary with the relevant CZI metainformation
+    :rtype: dict
     """
 
     # get CZI object and read array
     czi = zis.CziFile(filename)
-    mdczi = czi.metadata()
 
     # parse the XML into a dictionary
-    metadatadict_czi = xmltodict.parse(czi.metadata())
+    metadatadict_czi = czi.metadata(raw=False)
+
+    # parse the XML into a dictionary
+    #mdczi = czi.metadata()
+    #metadatadict_czi = xmltodict.parse(czi.metadata())
     metadata = create_metadata_dict()
 
     # get directory and filename etc.
@@ -494,12 +507,30 @@ def get_metadata_czi(filename, dim2none=False):
                 well = allscenes
 
             # get the well information
-            metadata['Well_Indices'].append(well['@Index'])
-            metadata['Well_PositionNames'].append(well['@Name'])
+            try:
+                metadata['Well_Indices'].append(well['@Index'])
+            except KeyError as e:
+                #print('Key not found in Metadata Dictionary:', e)
+                metadata['Well_Indices'].append(None)
+            try:
+                metadata['Well_PositionNames'].append(well['@Name'])
+            except KeyError as e:
+                #print('Key not found in Metadata Dictionary:', e)
+                metadata['Well_PositionNames'].append(None)
+
             # metadata['Well_ColId'].append(well['Shape']['ColumnIndex'])
             # metadata['Well_RowId'].append(well['Shape']['RowIndex'])
-            metadata['Well_ColId'].append(np.int(well['Shape']['ColumnIndex']))
-            metadata['Well_RowId'].append(np.int(well['Shape']['RowIndex']))
+            try:
+                metadata['Well_ColId'].append(np.int(well['Shape']['ColumnIndex']))
+            except KeyError as e:
+                print('Key not found in Metadata Dictionary:', e)
+                metadata['Well_ColId'].append(None)
+
+            try:
+                metadata['Well_RowId'].append(np.int(well['Shape']['RowIndex']))
+            except KeyError as e:
+                print('Key not found in Metadata Dictionary:', e)
+                metadata['Well_RowId'].append(None)
 
             # more than one scene detected
             if metadata['SizeS'] > 1:
@@ -519,8 +550,7 @@ def get_metadata_czi(filename, dim2none=False):
             metadata['NumWells'] = len(metadata['WellCounter'].keys())
 
     except KeyError as e:
-        print('Key not found in Metadata Dictionary:', e)
-        print('No Scence or Well Information detected.')
+        print('Problem extracting Scene or Well information:', e)
 
     del metadata['Information']
     del metadata['Scaling']
@@ -539,7 +569,9 @@ def get_additional_metadata_czi(filename):
     Returns a dictionary with additional CZI metadata.
 
     :param filename: filename of the CZI image
-    :return: additional_czimd - dictionary with the relevant OME-TIFF metainformation
+    :type filename: str
+    :return: additional_czimd - dictionary with additional CZI metainformation
+    :rtype: dict
     """
 
     # get CZI object and read array
@@ -588,9 +620,12 @@ def create_ipyviewer_ome_tiff(array, metadata):
     Works with OME-TIFF files and the respective metadata
 
     :param array: multidimensional array containing the pixel data
+    :type array: NumPy.Array
     :param metadata: dictionary with the metainformation
-    :return: out - interactive widgets
+    :return: out - interactive widgetsfor jupyter notebook
+    :rtype: IPyWidgets Output
     :return: ui - ui for interactive widgets
+    :rtype: IPyWidgets UI
     """
 
     # time slider
@@ -702,10 +737,13 @@ def create_ipyviewer_czi(cziarray, metadata):
     Creates a simple interactive viewer inside a Jupyter Notebook.
     Works with CZI files and the respective metadata
 
-    :param cziarray: multidimensional array containing the pixel data
+    :param array: multidimensional array containing the pixel data
+    :type array: NumPy.Array
     :param metadata: dictionary with the metainformation
-    :return: out - interactive widgets
+    :return: out - interactive widgetsfor jupyter notebook
+    :rtype: IPyWidgets Output
     :return: ui - ui for interactive widgets
+    :rtype: IPyWidgets UI
     """
 
     dim_dict = metadata['DimOrder CZI']
@@ -911,13 +949,31 @@ def display_image(array, metadata, sliders,
                   z=0,
                   vmin=0,
                   vmax=1000):
-    """
-    Displays the CZI or OME-TIFF image using a simple interactive viewer
+    """Displays the CZI or OME-TIFF image using a simple interactive viewer
     inside a Jupyter Notebook with dimension sliders.
 
-    :param array: multidimensional array containing the pixel data
+    :param array:  multidimensional array containing the pixel data
+    :type array: NumPy.Array
     :param metadata: dictionary with the metainformation
+    :type metadata: dict
     :param sliders: string specifying the required sliders
+    :type sliders: str
+    :param b: block index of plan to be displayed, defaults to 0
+    :type b: int, optional
+    :param s: scene index of plan to be displayed, defaults to 0
+    :type s: int, optional
+    :param m: tile index of plan to be displayed, defaults to 0
+    :type m: int, optional
+    :param t: time index of plan to be displayed, defaults to 0
+    :type t: int, optional
+    :param c: channel index of plan to be displayed, defaults to 0
+    :type c: int, optional
+    :param z: zplane index of plan to be displayed, defaults to 0
+    :type z: int, optional
+    :param vmin: minimum value for scaling, defaults to 0
+    :type vmin: int, optional
+    :param vmax: maximum value for scaling, defaults to 1000
+    :type vmax: int, optional
     """
 
     dim_dict = metadata['DimOrder CZI']
@@ -1045,13 +1101,16 @@ def display_image(array, metadata, sliders,
 
 
 def get_dimorder(dimstring):
-    """
-    Get the order of dimensions from dimension string
+    """Get the order of dimensions from dimension string
 
     :param dimstring: string containing the dimensions
+    :type dimstring: str
     :return: dims_dict - dictionary with the dimensions and its positions
+    :rtype: dict
     :return: dimindex_list - list with indices of dimensions
+    :rtype: list
     :return: numvalid_dims - number of valid dimensions
+    :rtype: integer
     """
 
     dimindex_list = []
@@ -1069,19 +1128,25 @@ def get_dimorder(dimstring):
 
 
 def get_array_czi(filename,
-                  replacevalue=False,
+                  replace_value=False,
                   remove_HDim=True,
                   return_addmd=False):
-    """
-    Get the pixel data of the CZI file as multidimensional NumPy.Array
+    """Get the pixel data of the CZI file as multidimensional NumPy.Array
 
     :param filename: filename of the CZI file
-    :param replacevalue: replace arrays entries with a specific value with Nan
-    :param remove_HDim: remove the H-Dimension (Airy Scan Detectors)
-    :param return_addmd: read the additional metadata
+    :type filename: str
+    :param replacevalue: replace arrays entries with a specific value with NaN, defaults to False
+    :type replacevalue: bool, optional
+    :param remove_HDim: remove the H-Dimension (Airy Scan Detectors), defaults to True
+    :type remove_HDim: bool, optional
+    :param return_addmd: read the additional metadata, defaults to False
+    :type return_addmd: bool, optional
     :return: cziarray - dictionary with the dimensions and its positions
+    :rtype: NumPy.Array
     :return: metadata - dictionary with CZI metadata
+    :rtype: dict
     :return: additional_metadata_czi - dictionary with additional CZI metadata
+    :rtype: dict
     """
 
     metadata = get_metadata_czi(filename)
@@ -1105,7 +1170,7 @@ def get_array_czi(filename,
     else:
         cziarray = np.squeeze(cziarray, axis=len(metadata['Axes']) - 1)
 
-    if replacevalue:
+    if replace_value:
         cziarray = replace_value(cziarray, value=0)
 
     # close czi file
@@ -1114,13 +1179,21 @@ def get_array_czi(filename,
     return cziarray, metadata, additional_metadata_czi
 
 
-def replace_value(data, value=0):
-    """
-    Replace specifc values in array with NaN
+def get_array_pylibczi(filename):
 
-    :param data: NumPy.Array
-    :param value: value inside array to be replaced with Nan
-    :return: data - array with new values
+    metadata = get_metadata_czi(filename)
+    additional_metadata_czi = get_additional_metadata_czi(filename)
+
+
+def replace_value(data, value=0):
+    """Replace specifc values in array with NaN
+
+    :param data: Array where values should be replaced
+    :type data: NumPy.Array
+    :param value: value inside array to be replaced with NaN, defaults to 0
+    :type value: int, optional
+    :return: array with new values
+    :rtype: NumPy.Array
     """
 
     data = data.astype('float')
@@ -1130,11 +1203,12 @@ def replace_value(data, value=0):
 
 
 def get_scalefactor(metadata):
-    """
-    Add scaling factors to the metadata dictionary
+    """Add scaling factors to the metadata dictionary
 
     :param metadata: dictionary with CZI or OME-TIFF metadata
-    :return: metadata - dictionary with additional keys for scling factors
+    :type metadata: dict
+    :return: dictionary with additional keys for scling factors
+    :rtype: dict
     """
 
     # set default scale factore to 1
@@ -1158,14 +1232,20 @@ def show_napari(array, metadata,
                 gamma=0.85,
                 verbose=True,
                 use_pylibczi=True):
-    """
-    Show the multidimensional array using the Napari viewer
+    """Show the multidimensional array using the Napari viewer
 
     :param array: multidimensional NumPy.Array containing the pixeldata
+    :type array: NumPy.Array
     :param metadata: dictionary with CZI or OME-TIFF metadata
-    :param blending: NapariViewer option for blending
-    :param gamma: NapariViewer value for Gamma
-    :param verbose: show additional output
+    :type metadata: dict
+    :param blending: NapariViewer option for blending, defaults to 'additive'
+    :type blending: str, optional
+    :param gamma: NapariViewer value for Gamma, defaults to 0.85
+    :type gamma: float, optional
+    :param verbose: show additional output, defaults to True
+    :type verbose: bool, optional
+    :param use_pylibczi: specify if pylibczi was used to read the CZI file, defaults to True
+    :type use_pylibczi: bool, optional
     """
 
     def calc_scaling(data, corr_min=1.0,
@@ -1323,11 +1403,12 @@ def show_napari(array, metadata,
 
 
 def check_for_previewimage(czi):
-    """
-    Check if the CZI contains an image from a prescan camera
+    """Check if the CZI contains an image from a prescan camera
 
-    :param czi: CZI image object
+    :param czi: CZI imagefile object
+    :type metadata: CziFile object
     :return: has_attimage - Boolean if CZI image contains prescan image
+    :rtype: bool
     """
 
     att = []
@@ -1346,12 +1427,14 @@ def check_for_previewimage(czi):
 
 
 def writexml_czi(filename, xmlsuffix='_CZI_MetaData.xml'):
-    """
-    Write XML imformation of CZI to disk
+    """Write XML imformation of CZI to disk
 
     :param filename: CZI image filename
-    :param xmlsuffix: suffix for the XML file that will be created
-    :return: xmlfile - filename of the XML file
+    :type filename: str
+    :param xmlsuffix: suffix for the XML file that will be created, defaults to '_CZI_MetaData.xml'
+    :type xmlsuffix: str, optional
+    :return: filename of the XML file
+    :rtype: str
     """
 
     # open czi file and get the metadata
@@ -1372,12 +1455,14 @@ def writexml_czi(filename, xmlsuffix='_CZI_MetaData.xml'):
 
 
 def writexml_ometiff(filename, xmlsuffix='_OMETIFF_MetaData.xml'):
-    """
-    Write XML imformation of OME-TIFF to disk
+    """Write XML imformation of OME-TIFF to disk
 
     :param filename: OME-TIFF image filename
-    :param xmlsuffix: suffix for the XML file that will be created
-    :return: xmlfile - filename of the XML file
+    :type filename: str
+    :param xmlsuffix: suffix for the XML file that will be created, defaults to '_OMETIFF_MetaData.xml'
+    :type xmlsuffix: str, optional
+    :return: filename of the XML file
+    :rtype: str
     """
 
     if filename.lower().endswith('.ome.tiff'):
@@ -1407,8 +1492,11 @@ def getImageSeriesIDforWell(welllist, wellID):
     Returns all ImageSeries (for OME-TIFF) indicies for a specific wellID
 
     :param welllist: list containing all wellIDs as stringe, e.g. '[B4, B4, B4, B4, B5, B5, B5, B5]'
+    :type welllist: list
     :param wellID: string specifying the well, eg.g. 'B4'
+    :type wellID: str
     :return: imageseriesindices - list containing all ImageSeries indices, which correspond the the well
+    :rtype: list
     """
 
     imageseries_indices = [i for i, x in enumerate(welllist) if x == wellID]
