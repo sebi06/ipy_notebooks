@@ -1,7 +1,19 @@
+# -*- coding: utf-8 -*-
+
+#################################################################
+# File        : imgfileutils.py
+# Version     : 0.1
+# Author      : czsrh
+# Date        : 20.04.2020
+# Institution : Carl Zeiss Microscopy GmbH
+#
+# Copyright (c) 2020 Carl Zeiss AG, Germany. All Rights Reserved.
+#################################################################
+
 # this can be used to switch on/off warnings
-import warnings
-warnings.filterwarnings('ignore')
-warnings.simplefilter('ignore')
+#import warnings
+# warnings.filterwarnings('ignore')
+# warnings.simplefilter('ignore')
 
 import czifile as zis
 from apeer_ometiff_library import io, processing, omexmlClass
@@ -75,9 +87,8 @@ def create_metadata_dict():
                 'SizeC': None,
                 'SizeT': None,
                 'Sizes BF': None,
-                'DimOrder BF': None,
-                'DimOrder BF Array': None,
-                'DimOrder CZI': None,
+                # 'DimOrder BF': None,
+                # 'DimOrder BF Array': None,
                 'Axes': None,
                 'Shape': None,
                 'isRGB': None,
@@ -489,6 +500,7 @@ def get_metadata_czi(filename, dim2none=False):
     metadata['WellCounter'] = None
 
     try:
+        print('Trying to extract Scene and Well information if existing ...')
         # extract well information from the dictionary
         allscenes = metadata['Information']['Image']['Dimensions']['S']['Scenes']['Scene']
 
@@ -550,7 +562,7 @@ def get_metadata_czi(filename, dim2none=False):
             metadata['NumWells'] = len(metadata['WellCounter'].keys())
 
     except KeyError as e:
-        print('Problem extracting Scene or Well information:', e)
+        print('No valid Scene or Well information found:', e)
 
     del metadata['Information']
     del metadata['Scaling']
@@ -1114,7 +1126,7 @@ def get_dimorder(dimstring):
     """
 
     dimindex_list = []
-    dims = ['B', 'S', 'T', 'C', 'Z', 'Y', 'X', '0']
+    dims = ['R', 'I', 'M', 'H', 'V', 'B', 'S', 'T', 'C', 'Z', 'Y', 'X', '0']
     dims_dict = {}
 
     for d in dims:

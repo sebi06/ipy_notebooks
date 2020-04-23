@@ -30,5 +30,20 @@ dependencies:
           - MightyMosaic
           - silence-tensorflow
           - cellpose
+          - apeer-ometiff-library
 # conda env create -f environment_srh.yml
 # conda env update --name cellpose_srh --file environment_srh.yml
+#
+# Before installing the GPU version, remove the CPU version:
+#
+# pip uninstall mxnet-mkl
+# pip uninstall mxnet
+#
+# nvcc --version
+# nvidia-smi
+#
+# pip install mxnet-cu102 for CUDA 10.2
+# When upgrading cellpose, you will want to ignore dependencies (so that mxnet-mkl does not install):
+#
+# pip install --no-deps cellpose --upgrade
+

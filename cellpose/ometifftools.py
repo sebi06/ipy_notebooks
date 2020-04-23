@@ -1,10 +1,28 @@
-import javabridge as jv
-import bioformats
+# -*- coding: utf-8 -*-
+
+#################################################################
+# File        : ometifftools.py
+# Version     : 0.1
+# Author      : czsrh
+# Date        : 20.04.2020
+# Institution : Carl Zeiss Microscopy GmbH
+#
+# Copyright (c) 2020 Carl Zeiss AG, Germany. All Rights Reserved.
+#################################################################
+
 import tifffile
 import os
 import numpy as np
 from aicsimageio import AICSImage, imread
 from aicsimageio.writers import ome_tiff_writer
+import imgfileutils as imf
+
+try:
+    import javabridge as jv
+    import bioformats
+except ImportError as error:
+    # Output expected ImportErrors.
+    print(error.__class__.__name__ + ": " + error.msg)
 
 
 def write_ometiff(filepath, img,
@@ -104,18 +122,36 @@ def writeOMETIFFplanes(pixel, SizeT=1, SizeZ=1, SizeC=1, order='TZCXY', verbose=
     return pixel
 
 
-def write_ometiff_aicsimageio(filepath, imgarray, metadata, overwrite=False):
+def write_ometiff_aicsimageio(savepath, imgarray, metadata,
+                              czireader='aicsimageio',
+                              overwrite=False):
+    """Write an OME-TIFF file from an image array based on the metadata
 
-    # define scaling
+    :param filepath: savepath of the OME-TIFF stack 
+    :type filepath: str
+    :param imgarray: multi-dimensional image array
+    :type imgarray: NumPy.Array
+    :param metadata: metadata dictionary with the required information
+    to create an correct OME-TIFF file
+    :type metadata: dict
+    :param czireader: string (aicsimagio or czifile) specifying
+    the used CZI reader, defaults to aicsimageio
+    :type metadata: str
+    :param overwrite: option to overwrite an existing OME-TIFF, defaults to False
+    :type overwrite: bool, optional
+    """
+
+    # define scaling from metadata or use defualt scaling
     try:
         pixels_physical_size = [metadata['XScale'],
                                 metadata['YScale'],
                                 metadata['ZScale']]
     except KeyError as e:
         print('Key not found:', e)
-        pixels_physical_size = None
+        print('Use default scaling XYZ=1')
+        pixels_physical_size = [1, 1, 1]
 
-    # define channel names list
+    # define channel names list from metadata
     try:
         channel_names = []
         for ch in metadata['Channels']:
@@ -124,23 +160,74 @@ def write_ometiff_aicsimageio(filepath, imgarray, metadata, overwrite=False):
         print('Key not found:', e)
         channel_names = None
 
-    # define correct string fro dimension order
-    if len(imgarray.shape) == 5:
-        dimension_order = 'TZCYX'
-    elif len(imgarray.shape) == 4:
-        dimension_order = 'ZCYX'
-    elif len(imgarray.shape) == 3:
-        dimension_order = 'CYX'
-    elif len(imgarray.shape) == 2:
-        dimension_order = 'YX'
+    # get the dimensions and their position inside the dimension string
+    if czireader == 'aicsimageio':
+
+        dims_dict, dimindex_list, numvalid_dims = imf.get_dimorder(metadata['Axes_aics'])
+
+        # if the array has more than 5 dimensions then remove the S dimension
+        # because it is not supported by OME-TIFF
+        if len(imgarray.shape) > 5:
+            try:
+                imgarray = np.squeeze(imgarray, axis=dims_dict['S'])
+            except Exception:
+                print('Could not remover S Dimension from string.)')
+
+        # remove the S character from the dimension string
+        new_dimorder = metadata['Axes_aics'].replace('S', '')
+
+    if czireader == 'czifile':
+
+        new_dimorder = metadata['Axes']
+        dims_dict, dimindex_list, numvalid_dims = imf.get_dimorder(metadata['Axes'])
+        """
+        '0': 'Sample',  # e.g. RGBA
+        'X': 'Width',
+        'Y': 'Height',
+        'C': 'Channel',
+        'Z': 'Slice',  # depth
+        'T': 'Time',
+        'R': 'Rotation',
+        'S': 'Scene',  # contiguous regions of interest in a mosaic image
+        'I': 'Illumination',  # direction
+        'B': 'Block',  # acquisition
+        'M': 'Mosaic',  # index of tile for compositing a scene
+        'H': 'Phase',  # e.g. Airy detector fibers
+        'V': 'View',  # e.g. for SPIM
+        """
+
+        to_remove = []
+
+        # list of unspupported dims for writing an OME-TIFF
+        dims = ['R', 'I', 'M', 'H', 'V', 'B', 'S', '0']
+
+        for dim in dims:
+            if dims_dict[dim] >= 0:
+                # remove the CZI DIMENSION character from the dimension string
+                new_dimorder = new_dimorder.replace(dim, '')
+                # add dimension index to the list of axis to be removed
+                to_remove.append(dims_dict[dim])
+                print('Remove Dimension:', dim)
+
+        # create tuple with dimensions to be removed
+        dims2remove = tuple(to_remove)
+        # remove dimensions from array
+        imgarray = np.squeeze(imgarray, axis=dims2remove)
 
     # write the array as an OME-TIFF incl. the metadata
-    with ome_tiff_writer.OmeTiffWriter(filepath, overwrite_file=overwrite) as writer:
-        writer.save(imgarray,
-                    channel_names=channel_names,
-                    image_name=os.path.basename((filepath)),
-                    pixels_physical_size=pixels_physical_size,
-                    channel_colors=None,
-                    dimension_order=dimension_order)
+    try:
+        with ome_tiff_writer.OmeTiffWriter(savepath, overwrite_file=overwrite) as writer:
+            writer.save(imgarray,
+                        channel_names=channel_names,
+                        image_name=os.path.basename((savepath)),
+                        pixels_physical_size=pixels_physical_size,
+                        channel_colors=None,
+                        dimension_order=new_dimorder)
+            writer.close()
 
-    print('Saved image as: ', filepath)
+        print('Saved image as: ', savepath)
+    except Exception:
+        print('Could not write OME-TIFF')
+        savepath = None
+
+    return savepath
