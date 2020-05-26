@@ -25,10 +25,13 @@ dependencies:
           - google-cloud-storage
           - tqdm
           - czifile
+          - apeer-ometiff-library
+          - apeer-dev-kit
           - napari
           - aicsimageio
           - MightyMosaic
           - silence-tensorflow
           - cellpose
+          - progressbar2
 # conda env create -f environment_srh.yml
 # conda env update --name cellpose_srh --file environment_srh.yml
