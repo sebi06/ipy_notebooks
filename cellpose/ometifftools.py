@@ -123,19 +123,19 @@ def writeOMETIFFplanes(pixel, SizeT=1, SizeZ=1, SizeC=1, order='TZCXY', verbose=
 
 
 def write_ometiff_aicsimageio(savepath, imgarray, metadata,
-                              reader='aicsimageio',
+                              czireader='aicsimageio',
                               overwrite=False):
     """Write an OME-TIFF file from an image array based on the metadata
 
-    :param filepath: savepath of the OME-TIFF stack
+    :param filepath: savepath of the OME-TIFF stack 
     :type filepath: str
     :param imgarray: multi-dimensional image array
     :type imgarray: NumPy.Array
     :param metadata: metadata dictionary with the required information
     to create an correct OME-TIFF file
     :type metadata: dict
-    :param reader: string (aicsimagio or czifile) specifying
-    the used reader, defaults to aicsimageio
+    :param czireader: string (aicsimagio or czifile) specifying
+    the used CZI reader, defaults to aicsimageio
     :type metadata: str
     :param overwrite: option to overwrite an existing OME-TIFF, defaults to False
     :type overwrite: bool, optional
@@ -161,7 +161,7 @@ def write_ometiff_aicsimageio(savepath, imgarray, metadata,
         channel_names = None
 
     # get the dimensions and their position inside the dimension string
-    if reader == 'aicsimageio':
+    if czireader == 'aicsimageio':
 
         dims_dict, dimindex_list, numvalid_dims = imf.get_dimorder(metadata['Axes_aics'])
 
@@ -176,7 +176,7 @@ def write_ometiff_aicsimageio(savepath, imgarray, metadata,
         # remove the S character from the dimension string
         new_dimorder = metadata['Axes_aics'].replace('S', '')
 
-    if reader == 'czifile':
+    if czireader == 'czifile':
 
         new_dimorder = metadata['Axes']
         dims_dict, dimindex_list, numvalid_dims = imf.get_dimorder(metadata['Axes'])
@@ -214,41 +214,20 @@ def write_ometiff_aicsimageio(savepath, imgarray, metadata,
         # remove dimensions from array
         imgarray = np.squeeze(imgarray, axis=dims2remove)
 
-        # write the array as an OME-TIFF incl. the metadata
-        try:
-            with ome_tiff_writer.OmeTiffWriter(savepath, overwrite_file=overwrite) as writer:
-                writer.save(imgarray,
-                            channel_names=channel_names,
-                            image_name=os.path.basename((savepath)),
-                            pixels_physical_size=pixels_physical_size,
-                            channel_colors=None,
-                            dimension_order=new_dimorder)
-                writer.close()
-                print('Saved image as: ', savepath)
-        except Exception as error:
-            print('Could not write OME-TIFF')
-            savepath = None
+    # write the array as an OME-TIFF incl. the metadata
+    try:
+        with ome_tiff_writer.OmeTiffWriter(savepath, overwrite_file=overwrite) as writer:
+            writer.save(imgarray,
+                        channel_names=channel_names,
+                        image_name=os.path.basename((savepath)),
+                        pixels_physical_size=pixels_physical_size,
+                        channel_colors=None,
+                        dimension_order=new_dimorder)
+            writer.close()
+
+        print('Saved image as: ', savepath)
+    except Exception:
+        print('Could not write OME-TIFF')
+        savepath = None
 
     return savepath
-
-
-def correct_omeheader(omefile,
-                      old=("2012-03", "2013-06", r"ome/2016-06"),
-                      new=("2016-06", "2016-06", r"OME/2016-06")
-                      ):
-
-    tif = tifffile.TiffFile(omefile)
-    array = tif.asarray()
-    omexml_string = tif.ome_metadata
-
-    for ostr, nstr in zip(old, new):
-        print('Replace: ', ostr, 'with', nstr)
-        omexml_string = omexml_string.replace(ostr, nstr)
-
-    tifffile.imsave(omefile, array,
-                    photometric='minisblack',
-                    description=omexml_string)
-
-    tif.close()
-
-    print('Updated OME Header.')

@@ -2,9 +2,9 @@
 
 #################################################################
 # File        : test_nuclei_segmentation.py
-# Version     : 0.3
+# Version     : 0.5
 # Author      : czsrh
-# Date        : 11.04.2020
+# Date        : 20.04.2020
 # Institution : Carl Zeiss Microscopy GmbH
 #
 # Copyright (c) 2020 Carl Zeiss AG, Germany. All Rights Reserved.
@@ -79,7 +79,11 @@ verbose = False
 
 
 def set_device():
+    """Check if GPU working, and if so use it
 
+    :return: device - CPU or GPU
+    :rtype: mxnet device
+    """
     # check if GPU working, and if so use it
     use_gpu = utils.use_gpu()
     print('Use GPU: ', use_gpu)
@@ -93,6 +97,15 @@ def set_device():
 
 
 def apply_watershed(binary, min_distance=10):
+    """Apply normal watershed to a binary image
+
+    :param binary: binary images from segmentation
+    :type binary: NumPy.Array
+    :param min_distance: minimum peak distance [pixel], defaults to 10
+    :type min_distance: int, optional
+    :return: mask - mask with separeted objects
+    :rtype: NumPy.Array
+    """
 
     # create distance map
     distance = ndimage.distance_transform_edt(binary)
@@ -120,6 +133,23 @@ def apply_watershed_adv(image2d,
                         filtersize_ws=3,
                         min_distance=2,
                         radius=1):
+    """Apply advanced watershed to a binary image
+
+    :param image2d: 2D image with pixel intensities
+    :type image2d: NumPy.Array
+    :param segmented: binary images from initial segmentation
+    :type segmented: NumPy.Array
+    :param filtermethod_ws: choice of filter method, defaults to 'median'
+    :type filtermethod_ws: str, optional
+    :param filtersize_ws: size paramater for the selected filter, defaults to 3
+    :type filtersize_ws: int, optional
+    :param min_distance: minimum peak distance [pixel], defaults to 2
+    :type min_distance: int, optional
+    :param radius: radius for dilation disk, defaults to 1
+    :type radius: int, optional
+    :return: mask - binary mask with separated objects
+    :rtype: NumPy.Array
+    """
 
     # convert to float
     image2d = image2d.astype(np.float)
@@ -158,6 +188,20 @@ def autoThresholding(image2d,
                      method='triangle',
                      radius=10,
                      value=50):
+    """Autothreshold an 2D intensity image which is calculated using:
+    binary = image2d >= thresh
+
+    :param image2d: input image for thresholding
+    :type image2d: NumPy.Array
+    :param method: choice of thresholding method, defaults to 'triangle'
+    :type method: str, optional
+    :param radius: radius of disk when using local Otsu threshold, defaults to 10
+    :type radius: int, optional
+    :param value: manual threshold value, defaults to 50
+    :type value: int, optional
+    :return: binary - binary mask from thresholding
+    :rtype: NumPy.Array
+    """
 
     # calculate global Otsu threshold
     if method == 'global_otsu':
@@ -186,6 +230,30 @@ def segment_threshold(image2d,
                       min_distance=30,
                       ws_method='ws_adv',
                       radius=1):
+    """Segment an image using the following steps:
+    - filter image
+    - threshold image
+    - apply watershed
+
+    :param image2d: 2D image with pixel intensities
+    :type image2d: NumPy.Array
+    :param filtermethod: choice of filter method, defaults to 'median'
+    :type filtermethod: str, optional
+    :param filtersize: size paramater for the selected filter, defaults to 3
+    :type filtersize: int, optional
+    :param threshold: choice of thresholding method, defaults to 'triangle'
+    :type threshold: str, optional
+    :param split_ws: enable splitting using watershed, defaults to True
+    :type split_ws: bool, optional
+    :param min_distance: minimum peak distance [pixel], defaults to 30
+    :type min_distance: int, optional
+    :param ws_method: choice of watershed method, defaults to 'ws_adv'
+    :type ws_method: str, optional
+    :param radius: radius for dilation disk, defaults to 1
+    :type radius: int, optional
+    :return: mask - binary mask
+    :rtype: NumPy.Array
+    """
 
     # filter image
     if filtermethod == 'none':
@@ -220,7 +288,35 @@ def segment_threshold(image2d,
 
 def segment_nuclei_cellpose(image2d, model,
                             channels=[0, 0],
-                            rescale=None):
+                            rescale=None,
+                            diameter=None):
+    """Segment nucleus or cytosol using a cellpose model
+
+    - define CHANNELS to run segmentation on
+    - grayscale=0, R=1, G=2, B=3
+    - channels = [cytoplasm, nucleus]
+    - if NUCLEUS channel does not exist, set the second channel to 0
+    - IF ALL YOUR IMAGES ARE THE SAME TYPE, you can give a list with 2 elements
+    - channels = [0,0] # IF YOU HAVE GRAYSCALE
+    - channels = [2,3] # IF YOU HAVE G=cytoplasm and B=nucleus
+    - channels = [2,1] # IF YOU HAVE G=cytoplasm and R=nucleus
+
+
+    :param image2d: 2D image
+    :type image2d: NumPy.Array
+    :param model: cellposemodel for segmentation
+    :type model: cellpose model
+    :param channels: channels used for segmentation[description], defaults to [0, 0]
+    :type channels: list, optional
+    :param rescale: if diameter is set to None, and rescale is not None,
+    then rescale is used instead of diameter for resizing image, defaults to None
+    :type rescale: float, optional
+    :param diameter: Estimated diameter of objects. If set to None,
+    then diameter is automatically estimated if size model is loaded, defaults to None
+    :type diamter: list, optional
+    :return: mask - binary mask
+    :rtype: NumPy.Array
+    """
 
     # define CHANNELS to run segmentation on
     # grayscale=0, R=1, G=2, B=3
@@ -233,32 +329,37 @@ def segment_nuclei_cellpose(image2d, model,
     # channels = [2,1] # IF YOU HAVE G=cytoplasm and R=nucleus
 
     # get the mask for a single image
-    masks, _, _, _ = model.eval([image2d], rescale=rescale, channels=channels)
+
+    masks, _, _, _ = model.eval([image2d],
+                                channels=channels,
+                                diameter=diameter,
+                                invert=False,
+                                do_3D=False,
+                                net_avg=True,
+                                tile=False,
+                                threshold=0.4,
+                                rescale=rescale,
+                                progress=None)
+
+    # masks, _, _, _ = model.eval([image2d], rescale=rescale, channels=channels)
 
     return masks[0]
 
 
-def get_binary_from_prediction(prediction, classlabel=1):
-
-    # Generate labels from one-hot encoded vectors
-    prediction_labels = np.argmax(prediction, axis=-1)
-
-    """
-    # get the desired class
-    background = 0
-    nuclei = 1
-    borders = 2
-    """
-
-    # extract desired class
-    binary = np.where(prediction_labels == classlabel, 1, 0)
-
-    return binary
-
-
 def segment_zentf(image2d, model, classlabel):
+    """Segment a singe [X, Y] 2D image using a pretrained segmentation
+    model from the ZEN. The out will be a binary mask from the prediction
+    of ZEN czmodel which is a TF.SavedModel with metainformation
 
-    # segment a singe [X, Y] 2D image
+    :param image2d: image to be segmented
+    :type image2d: NumPy.Array
+    :param model: trained TF2 model used for segmentation
+    :type model: TF.SavedModel
+    :param classlabel: Index for the class one is interested in
+    :type classlabel: int
+    :return: binary - binary mask of the specified class
+    :rtype: NumPy.Array
+    """
 
     # add add batch dimension (at the front) and channel dimension (at the end)
     image2d = image2d[np.newaxis, ..., np.newaxis]
@@ -266,8 +367,14 @@ def segment_zentf(image2d, model, classlabel):
     # Run prediction - array shape must be [1, 1024, 1024, 1]
     prediction = model.predict(image2d)[0]  # Removes batch dimension
 
-    # get the binary image with the labels
-    binary = get_binary_from_prediction(prediction, classlabel=classlabel)
+    # Generate labels from one-hot encoded vectors
+    prediction_labels = np.argmax(prediction, axis=-1)
+
+    # get the desired class
+    # background = 0, nuclei = 1 and borders = 2
+
+    # extract desired class
+    binary = np.where(prediction_labels == classlabel, 1, 0)
 
     return binary
 
@@ -276,8 +383,31 @@ def segment_zentf_tiling(image2d, model,
                          tilesize=1024,
                          classlabel=1,
                          overlap_factor=1):
+    """Segment a singe [X, Y] 2D image using a pretrained segmentation
+    model from the ZEN. The out will be a binary mask from the prediction
+    of ZEN czmodel which is a TF.SavedModel with metainformation.
 
-    # create tile image
+    Before the segmentation via the network will be applied
+    the image2d will be tiled in order to match the tile size to the required
+    batch tile size of the used network. Default is (1024, 1024)
+
+    :param image2d: image to be segmented
+    :type image2d: NumPy.Array
+    :param model: trained TF2 model used for segmentation
+    :type model: TF.SavedModel
+    :param tilesize: required tile size for the segmentation model, defaults to 1024
+    :type tilesize: int, optional
+    :param classlabel: Index for the class one is interested in, defaults to 1
+    :type classlabel: int, optional
+    :param overlap_factor: overlap_factor of 2 = stride between each tile
+    is only tile_shape/overlap_factor and therefore
+    overlap_factor = 1 means no overlap, defaults to 1
+    :type overlap_factor: int, optional
+    :return: binary - binary mask of the specified class
+    :rtype: Numpy.Array
+    """
+
+    # create tile image using MightMosaic
     image2d_tiled = MightyMosaic.from_array(image2d, (tilesize, tilesize),
                                             overlap_factor=overlap_factor,
                                             fill_mode='reflect')
@@ -313,6 +443,17 @@ def segment_zentf_tiling(image2d, model,
 
 
 def plot_results(image, mask, props, add_bbox=True):
+    """Display the results of the segmentation
+
+    :param image: 2d image with the original data
+    :type image: NumPy.Array
+    :param mask: binary mask from the segmentation
+    :type mask: NumPy.Array
+    :param props: region props with scikit-image
+    :type props: list (of region properties)
+    :param add_bbox: show the bounding box on the original image, defaults to True
+    :type add_bbox: bool, optional
+    """
 
     # create overlay image
     image_label_overlay = label2rgb(mask, image=image, bg_label=0)
@@ -339,15 +480,14 @@ def plot_results(image, mask, props, add_bbox=True):
 def add_boundingbox(props, ax2plot):
     """Add bounding boxes for objects to the current axes
 
-    Arguments:
-        props {Pandas DataFrame} -- DataFrame contained the measured parameters
-                                    for the bounding boxes
-        ax2plot {MatplotLib axes} -- The Axes contained the images where
-                                     the boxes should be drawn
-
-    Returns:
-        [MatplotLib axes] -- The axes inclusing the bounding boxes.
+    :param props: list of measured regions
+    :type props: list
+    :param ax2plot: matplot axis where the bounding boxes should be added
+    :type ax2plot: axes
+    :return: ax2plot - the axes including the bounding boxes
+    :rtype: axes
     """
+
     for index, row in props.iterrows():
 
         minr = row['bbox-0']
@@ -368,6 +508,21 @@ def cutout_subimage(image2d,
                     starty=0,
                     width=100,
                     height=200):
+    """Cutout a subimage ot of a bigger image
+
+    :param image2d: the original image
+    :type image2d: NumPy.Array
+    :param startx: startx, defaults to 0
+    :type startx: int, optional
+    :param starty: starty, defaults to 0
+    :type starty: int, optional
+    :param width: width, defaults to 100
+    :type width: int, optional
+    :param height: height, defaults to 200
+    :type height: int, optional
+    :return: image2d - subimage cutted out from original image2d
+    :rtype: NumPy.Array
+    """
 
     image2d = image2d[starty: height, startx:width]
 
@@ -375,6 +530,18 @@ def cutout_subimage(image2d,
 
 
 def add_padding(image2d, input_height=1024, input_width=1024):
+    """Add padding to an image if the size of that image is
+    smaller than the required input width and input height
+
+    :param image2d: 2d image
+    :type image2d: NumPy.Array
+    :param input_height: required height of the input image, defaults to 1024
+    :type input_height: int, optional
+    :param input_width: required width of the input image, defaults to 1024
+    :type input_width: int, optional
+    :return: image2d_padded - added image with teh required size
+    :rtype: NumPy Array
+    """
 
     if len(image2d.shape) == 2:
         isrgb = False
@@ -402,10 +569,39 @@ def showheatmap(heatmap, parameter2display,
                 linecolor='black',
                 linewidth=1.0,
                 save=False,
-                savename='Heatmap.png',
+                # savename='Heatmap.png',
                 robust=True,
                 filename='Test.czi',
                 dpi=100):
+    """Plot a heatmap for a wellplate from a dataframe.
+
+    :param heatmap: Pandas DataFrame with the heatmap data for a wellplate
+    :type heatmap: Pandas.dataFrame
+    :param parameter2display: Measurement parameter to be displays as heatmap
+    :type parameter2display: str
+    :param fontsize_title: font size of title, defaults to 12
+    :type fontsize_title: int, optional
+    :param fontsize_label: font size of labels, defaults to 10
+    :type fontsize_label: int, optional
+    :param colormap: Specifies which colormap to use for the heatmap, defaults to 'Blues'
+    :type colormap: str, optional
+    :param linecolor: Specifies the color of the line between the wells, defaults to 'black'
+    :type linecolor: str, optional
+    :param linewidth: Specifies the line width between the wells, defaults to 1.0
+    :type linewidth: float, optional
+    :param save: Option to save the heapmap as PNG image, defaults to False
+    :type save: bool, optional
+    :param robust: If True and vmin or vmax are absent, the colormap range is
+    computed with robust quantiles instead of the extreme values., defaults to True
+    :type robust: bool, optional
+    :param filename: filename of the original image file - will be used to derive
+    the filename for the PNG image to be saved, defaults to 'Test.czi'
+    :type filename: str, optional
+    :param dpi: dpi, defaults to 100
+    :type dpi: int, optional
+    :return: savename - filename of the saved plot
+    :rtype: str
+    """
 
     # create figure with subplots
     fig, ax = plt.subplots(1, 1, figsize=(10, 8))
@@ -444,17 +640,22 @@ def showheatmap(heatmap, parameter2display,
                     frameon=False)
         print('Heatmap image saved as: ', savename)
     else:
-        savename = False
+        savename = None
 
     return savename
 
 
 def getrowandcolumn(platetype=96):
+    """[summary]
+
+    :param platetype: number total wells of plate (6, 24, 96, 384 or 1536), defaults to 96
+    :type platetype: int, optional
+    :return: nr - number of rows of wellplate
+    :rtype: int
+    :return: nc - number of columns for wellplate
+    :rtype: int
     """
-    :param platetype - number total wells of plate (6, 24, 96, 384 or 1536)
-    :return nr - number of rows of wellplate
-    :return nc - number of columns for wellplate
-    """
+
     platetype = int(platetype)
 
     if platetype == 6:
@@ -477,6 +678,13 @@ def getrowandcolumn(platetype=96):
 
 
 def create_heatmap(platetype=96):
+    """Create empty heatmap array based on the platetype
+
+    :param platetype: [description], defaults to 96
+    :type platetype: int, optional
+    :return: heatmap_array - empty array with the shape of the wellplate
+    :rtype: NumPy.Array
+    """
 
     # create heatmap based on the platetype
     nr, nc = getrowandcolumn(platetype=platetype)
@@ -488,14 +696,14 @@ def create_heatmap(platetype=96):
 def convert_array_to_heatmap(hmarray, nr, nc):
     """Get the labels for a well plate and create a data frame from the numpy array
 
-    Arguments:
-        hmarray {ndarray} -- The numpy array containing the actual heatmap.
-        nr {integer} -- number of rows for the well plate
-        nc {integer} -- number of colums for the wellplate
-
-    Returns:
-        [Pandas DataFrame] -- A Pandas dataframe with the respective
-                              row and columns labels
+    :param hmarray: The numpy array containing the actual heatmap
+    :type hmarray: NumPy.Array
+    :param nr: number of rows for the well plate
+    :type nr: int
+    :param nc: number of columns for the well plate
+    :type nc: int
+    :return: A Pandas dataframe with the respective row and columns labels
+    :rtype: Pandas.DataFrame
     """
 
     lx, ly = extract_labels(nr, nc)
@@ -505,13 +713,16 @@ def convert_array_to_heatmap(hmarray, nr, nc):
 
 
 def extract_labels(nr, nc):
-    """
-    Define helper function to be able to extract the well labels depending
-    on the actual wellplate type. Currently supports 96, 384 and 1536 well plates.
+    """[summary]
 
     :param nr: number of rows of the wellplate, e.g. 8 (A-H) for a 96 wellplate
+    :type nr: [type]
     :param nc: number of columns of the wellplate, e.g. 12 (1-12) for a 96 wellplate
-    :return: lx, ly are list containing the actual row and columns IDs
+    :type nc: [type]
+    :return: lx - list containing the actual row IDs for the selected wellplate
+    :rtype: list
+    :return: ly - list containing the actual column IDs for the selected wellplate
+    :rtype: list
     """
 
     # labeling schemes
@@ -536,11 +747,16 @@ filenames = [r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/B4_B5_S=8
              r'/datadisk1/tuxedo/testpictures/Testdata_Zeiss/wellplate/testwell96.czi',
              r'C:\Users\m1srh\Documents\Testdata_Zeiss\Castor\testwell96.czi',
              r'C:\Users\m1srh\OneDrive - Carl Zeiss AG\Testdata_Zeiss\Castor\testwell96 - A1_1024x1024_0.czi',
-             r'segment_nuclei_CNN.czi']
+             r'segment_nuclei_CNN.czi',
+             r"E:\tuxedo\testpictures\Testdata_Zeiss\wellplate\testwell96.czi"]
 
-filename = filenames[2]
+filename = filenames[6]
+
+# readmethod: fullstack, chunked, chunked_dask, perscene
+readmethod = 'fullstack'
 
 # define platetype and get number of rows and columns
+show_heatmap = True
 platetype = 96
 nr, nc = getrowandcolumn(platetype=platetype)
 
@@ -555,29 +771,29 @@ minsize = 200  # minimum object size [pixel]
 maxsize = 5000  # maximum object size [pixel]
 
 # define cutout size for subimage
-cutimage = False
+cutimage = True
 startx = 0
 starty = 0
-width = 600
-height = 600
+width = 640
+height = 640
 
 # define columns names for dataframe
 cols = ['S', 'T', 'Z', 'C', 'Number']
 objects = pd.DataFrame(columns=cols)
 
 # optional dipslay of "some" results - empty list = no display
-show_image = [0]
+show_image = []
 
-# for testing
-#SizeS = 1
+# set number of Scenes for testing
+# SizeS = 5
 
 # threshold parameters
 filtermethod = 'median'
-#filtermethod = None
+# filtermethod = None
 filtersize = 3
 threshold = 'triangle'
 
-# use watershed for splitting
+# use watershed for splitting - ws or ws_adv
 use_ws = True
 ws_method = 'ws_adv'
 filtermethod_ws = 'median'
@@ -590,13 +806,31 @@ if use_method == 'cellpose':
 
     # load cellpose model for cell nuclei using GPU or CPU
     print('Loading Cellpose Model ...')
-    model = models.Cellpose(device=set_device(), model_type='nuclei')
+
+    """
+    model = models.Cellpose(gpu=True,
+                            model_type='nuclei',
+                            net_avg=True,
+                            batch_size=8,
+                            device=set_device()
+                            )
+    """
+
+    model = models.Cellpose(model_type='nuclei',
+                            net_avg=True,
+                            batch_size=8,
+                            device=set_device()
+                            )
+
+    # model = models.Cellpose(device=set_device(), model_type='nuclei')
+    # model = models.Cellpose(device=mxnet.gpu(), model_type='nuclei')
 
     # define list of channels for cellpose
     # channels = SizeS * SizeT * SizeZ * [0, 0]
     channels = [0, 0]
+    diameter = 30
 
-# define model oath and load TF2 model when needed
+# define model path and load TF2 model when needed
 if use_method == 'zentf':
 
     # define tile overlap factor for MightyMosaic
@@ -612,6 +846,10 @@ if use_method == 'zentf':
 
 ###########################################################################
 
+# start the timer for the total pipeline
+startp = time.clock()
+readtime_allscenes = 0
+
 image_counter = 0
 results = pd.DataFrame()
 
@@ -619,6 +857,30 @@ results = pd.DataFrame()
 # get the metadata from the czi file
 md = imf.get_metadata_czi(filename, dim2none=False)
 
+if readmethod == 'chunked':
+    # start the timer
+    start = time.clock()
+    img = AICSImage(filename, chunk_by_dims=["S"])
+    stack = img.get_image_data()
+    end = time.clock()
+    print('Runtime CZI Reading using method: ', readmethod, str(end - start))
+
+if readmethod == 'chunked_dask':
+    # start the timer
+    start = time.clock()
+    img = AICSImage(filename, chunk_by_dims=["S"])
+    stack = img.get_image_dask_data()
+    end = time.clock()
+    print('Runtime CZI Reading using method: ', readmethod, str(end - start))
+
+if readmethod == 'fullstack':
+    # start the timer
+    start = time.clock()
+    img = AICSImage(filename)
+    stack = img.get_image_data()
+    #stack = imread(imagefile)
+    end = time.clock()
+    print('Runtime CZI Reading using method: ', readmethod, str(end - start))
 
 for s in range(SizeS):
     for t in range(SizeT):
@@ -631,11 +893,27 @@ for s in range(SizeS):
                       'Number': 0}
 
             print('Analyzing S-T-Z-C: ', s, t, z, chindex)
-            image2d = img.get_image_data("YX",
-                                         S=s,
-                                         T=t,
-                                         Z=z,
-                                         C=chindex)
+            
+            if readmethod == 'chunked_dask':
+                # start the timer
+                start = time.clock()
+                image2d = stack[s, t, z, chindex, :, :].compute()
+                end = time.clock()
+                readtime_allscenes = readtime_allscenes + (end - start)
+
+            if readmethod == 'fullstack' or readmethod == 'chunked':
+                image2d = stack[s, t, z, chindex, :, :]
+
+            if readmethod == 'perscene':
+                # start the timer
+                start = time.clock()
+                image2d = img.get_image_data("YX",
+                                             S=s,
+                                             T=t,
+                                             Z=z,
+                                             C=chindex)
+                end = time.clock()
+                readtime_allscenes = readtime_allscenes + (end - start)
 
             # cutout subimage
             if cutimage:
@@ -649,7 +927,8 @@ for s in range(SizeS):
                 # get the mask for the current image
                 mask = segment_nuclei_cellpose(image2d, model,
                                                rescale=None,
-                                               channels=channels)
+                                               channels=channels,
+                                               diameter=diameter)
 
             if use_method == 'scikit':
                 mask = segment_threshold(image2d,
@@ -733,7 +1012,7 @@ for s in range(SizeS):
             props['Well_ColId'] = md['Well_ColId'][s]
             props['Well_RowId'] = md['Well_RowId'][s]
 
-            # add plane indicies
+            # add plane indices
             props['S'] = s
             props['T'] = t
             props['Z'] = z
@@ -742,7 +1021,7 @@ for s in range(SizeS):
             # count the number of objects
             values['Number'] = props.shape[0]
             # values['Number'] = len(regions) - 1
-            print('Objects found: ', values['Number'])
+            print('Well:', props['WellId'].iloc[0], ' Objects: ', values['Number'])
 
             # update dataframe containing the number of objects
             objects = objects.append(pd.DataFrame(values, index=[0]),
@@ -755,56 +1034,65 @@ for s in range(SizeS):
             if image_counter - 1 in show_image:
                 plot_results(image2d, mask, props, add_bbox=True)
 
+if readmethod == 'perscene':
+    print('Runtime total CZI Reading using method: ', readmethod, readtime_allscenes)
+
 # reorder dataframe with single objects
 new_order = list(results.columns[-7:]) + list(results.columns[:-7])
 results = results.reindex(columns=new_order)
 
+# close the AICSImage object at the end
 img.close()
+
+# get the end time for the total pipeline
+endp = time.clock()
+print('Runtime Segmentation Pipeline : ' + str(endp - startp))
 
 print('Done')
 
-# create heatmap array with NaNs
-heatmap_numobj = create_heatmap(platetype=platetype)
-heatmap_param = create_heatmap(platetype=platetype)
+# optional display of a heatmap
+if show_heatmap:
 
-for well in md['WellCounter']:
-    # extract all entries for specific well
-    well_results = results.loc[results['WellId'] == well]
+    # create heatmap array with NaNs
+    heatmap_numobj = create_heatmap(platetype=platetype)
+    heatmap_param = create_heatmap(platetype=platetype)
 
-    # get the descriptive statistics for specific well
-    stats = well_results.describe(include='all')
+    for well in md['WellCounter']:
+        # extract all entries for specific well
+        well_results = results.loc[results['WellId'] == well]
 
-    # get the column an row indices for specific well
-    col = np.int(stats['Well_ColId']['mean'])
-    row = np.int(stats['Well_RowId']['mean'])
+        # get the descriptive statistics for specific well
+        stats = well_results.describe(include='all')
 
-    # add value for number of objects to heatmap_numobj
-    heatmap_numobj[row - 1, col - 1] = stats['WellId']['count']
+        # get the column an row indices for specific well
+        col = np.int(stats['Well_ColId']['mean'])
+        row = np.int(stats['Well_RowId']['mean'])
 
-    # add value for specifics params to heatmap
-    heatmap_param[row - 1, col - 1] = stats['area']['mean']
+        # add value for number of objects to heatmap_numobj
+        heatmap_numobj[row - 1, col - 1] = stats['WellId']['count']
 
-df_numobjects = convert_array_to_heatmap(heatmap_numobj, nr, nc)
-df_params = convert_array_to_heatmap(heatmap_param, nr, nc)
+        # add value for specifics params to heatmap
+        heatmap_param[row - 1, col - 1] = stats['area']['mean']
 
-# show a heatmap
+    df_numobjects = convert_array_to_heatmap(heatmap_numobj, nr, nc)
+    df_params = convert_array_to_heatmap(heatmap_param, nr, nc)
 
-# define parameter to display a single heatmap
-parameter2display = 'ObjectNumbers'
-colormap = 'YlGnBu'
+    # define parameter to display a single heatmap
+    parameter2display = 'ObjectNumbers'
+    colormap = 'YlGnBu'
 
-# show the heatmap for a single parameter
-savename_single = showheatmap(df_numobjects, parameter2display,
-                              fontsize_title=16,
-                              fontsize_label=16,
-                              colormap=colormap,
-                              linecolor='black',
-                              linewidth=3.0,
-                              save=False,
-                              filename=filename,
-                              dpi=300)
+    # show the heatmap for a single parameter
+    savename_single = showheatmap(df_numobjects, parameter2display,
+                                  fontsize_title=16,
+                                  fontsize_label=16,
+                                  colormap=colormap,
+                                  linecolor='black',
+                                  linewidth=3.0,
+                                  save=False,
+                                  filename=filename,
+                                  dpi=100)
 
-# print(objects)
-# print(results[:5])
+    # print(objects)
+    # print(results[:5])
 
-plt.show()
+    plt.show()

@@ -2,9 +2,9 @@
 
 #################################################################
 # File        : imgfileutils.py
-# Version     : 0.8
+# Version     : 0.3
 # Author      : czsrh
-# Date        : 04.05.2020
+# Date        : 20.04.2020
 # Institution : Carl Zeiss Microscopy GmbH
 #
 # Copyright (c) 2020 Carl Zeiss AG, Germany. All Rights Reserved.
@@ -30,17 +30,8 @@ import time
 import re
 from aicsimageio import AICSImage, imread, imread_dask
 import dask.array as da
+import napari
 import pandas as pd
-
-try:
-    import ipywidgets as widgets
-except ModuleNotFoundError as error:
-    print(error.__class__.__name__ + ": " + error.msg)
-
-try:
-    import napari
-except ModuleNotFoundError as error:
-    print(error.__class__.__name__ + ": " + error.msg)
 
 
 def get_imgtype(imagefile):
@@ -305,7 +296,9 @@ def get_metadata_czi(filename, dim2none=False):
     # parse the XML into a dictionary
     metadatadict_czi = czi.metadata(raw=False)
 
-    # initilaize metadata dictionary
+    # parse the XML into a dictionary
+    # mdczi = czi.metadata()
+    # metadatadict_czi = xmltodict.parse(czi.metadata())
     metadata = create_metadata_dict()
 
     # get directory and filename etc.
@@ -349,7 +342,7 @@ def get_metadata_czi(filename, dim2none=False):
     try:
         metadata['SizeZ'] = np.int(metadatadict_czi['ImageDocument']['Metadata']['Information']['Image']['SizeZ'])
     except Exception as e:
-        # print('Exception:', e)
+        #print('Exception:', e)
         if dim2none:
             metadata['SizeZ'] = None
         if not dim2none:
@@ -358,7 +351,7 @@ def get_metadata_czi(filename, dim2none=False):
     try:
         metadata['SizeC'] = np.int(metadatadict_czi['ImageDocument']['Metadata']['Information']['Image']['SizeC'])
     except Exception as e:
-        # print('Exception:', e)
+        #print('Exception:', e)
         if dim2none:
             metadata['SizeC'] = None
         if not dim2none:
@@ -392,7 +385,7 @@ def get_metadata_czi(filename, dim2none=False):
     try:
         metadata['SizeT'] = np.int(metadatadict_czi['ImageDocument']['Metadata']['Information']['Image']['SizeT'])
     except Exception as e:
-        # print('Exception:', e)
+        #print('Exception:', e)
         if dim2none:
             metadata['SizeT'] = None
         if not dim2none:
@@ -401,7 +394,7 @@ def get_metadata_czi(filename, dim2none=False):
     try:
         metadata['SizeM'] = np.int(metadatadict_czi['ImageDocument']['Metadata']['Information']['Image']['SizeM'])
     except Exception as e:
-        # print('Exception:', e)
+        #print('Exception:', e)
         if dim2none:
             metadatada['SizeM'] = None
         if not dim2none:
@@ -410,7 +403,7 @@ def get_metadata_czi(filename, dim2none=False):
     try:
         metadata['SizeB'] = np.int(metadatadict_czi['ImageDocument']['Metadata']['Information']['Image']['SizeB'])
     except Exception as e:
-        # print('Exception:', e)
+        #print('Exception:', e)
         if dim2none:
             metadatada['SizeB'] = None
         if not dim2none:
@@ -447,7 +440,7 @@ def get_metadata_czi(filename, dim2none=False):
                 print('Key not found:', e)
                 metadata['ZScaleUnit'] = metadata['XScaleUnit']
         except Exception as e:
-            # print('Exception:', e)
+            #print('Exception:', e)
             if dim2none:
                 metadata['ZScale'] = None
                 metadata['ZScaleUnit'] = None
@@ -514,12 +507,7 @@ def get_metadata_czi(filename, dim2none=False):
         metadata['ObjNominalMag'] = None
 
     try:
-        if metadata['TubelensMag'] is not None:
-            metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
-        if metadata['TubelensMag'] is None:
-            print('No TublensMag found. Use 1 instead')
-            metadata['ObjMag'] = metadata['ObjNominalMag'] * 1.0
-
+        metadata['ObjMag'] = metadata['ObjNominalMag'] * metadata['TubelensMag']
     except KeyError as e:
         print('Key not found:', e)
         metadata['ObjMag'] = None
@@ -542,6 +530,9 @@ def get_metadata_czi(filename, dim2none=False):
     except KeyError as e:
         print('Key not found:', e)
         metadata['DetectorName'] = None
+
+        # delete some key from dict
+        # del metadata['Instrument']
 
     # check for well information
     metadata['Well_ArrayNames'] = []
@@ -571,11 +562,17 @@ def get_metadata_czi(filename, dim2none=False):
                         print('Key not found in Metadata Dictionary:', e, 'Using A1 instead')
                         metadata['Well_ArrayNames'].append('A1')
 
-                try:
-                    metadata['Well_Indices'].append(allscenes['Index'])
-                except KeyError as e:
-                    print('Key not found in Metadata Dictionary:', e)
-                    metadata['Well_Indices'].append(1)
+            # get the well information
+            try:
+                metadata['Well_Indices'].append(well['Index'])
+            except KeyError as e:
+                # print('Key not found in Metadata Dictionary:', e)
+                metadata['Well_Indices'].append(None)
+            try:
+                metadata['Well_PositionNames'].append(well['Name'])
+            except KeyError as e:
+                # print('Key not found in Metadata Dictionary:', e)
+                metadata['Well_PositionNames'].append(None)
 
                 try:
                     metadata['Well_PositionNames'].append(allscenes['Name'])
@@ -644,8 +641,11 @@ def get_metadata_czi(filename, dim2none=False):
             # count the number of different wells
             metadata['NumWells'] = len(metadata['WellCounter'].keys())
 
-    except (KeyError, TypeError) as e:
+    except KeyError as e:
         print('No valid Scene or Well information found:', e)
+
+    # del metadata['Information']
+    # del metadata['Scaling']
 
     # close CZI file
     czi.close()
