@@ -2,28 +2,14 @@
 .vscode/launch.json
 .ipynb_checkpoints
 .pyc
-APEER/.vscode/settings.json
-APEER/modules/.vscode/settings.json
-APEER/modules/__pycache__/particleanalyzer.cpython-36.pyc
-APEER/modules/__pycache__/particleanalyzer.cpython-37.pyc
-APEER/T=5_Z=3_CH=2_CZT_All_CH_per_Slice.czi
-APEER/T=5_Z=3_CH=2_CZT_All_CH_per_Slice.ome.tiff
-APEER/T=5_Z=3_CH=2_CZT_All_CH_per_Slice.ome.txt
-APEER/testfiji.ome.tiff
-APEER/thresImage.tif
-APEER/thresImage.ome.tif
-APEER/stack.tif
-APEER/converterOutput.tif
-APEER/ome.xml
-APEER/particleimage.ome.tiff
-ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_all.png
-ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_Area.png
-ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_ObjectNumbers.png
-ZEN_Wellplate_Analysis_Pandas/Data/_Primary Object Translocation_2 ZEN 25_HM_Ratio.png
-APEER/.ipynb_checkpoints/APEER_Particle_Analysis V2-checkpoint.ipynb
 
-cellpose/.vscode/settings.json
-cellpose/.vscode/settings.json
-cellpose/.vscode/settings.json
+# fuse crap
+.fuse_hidden*
+.vscode/settings.json
+/.vscode/
+/.idea/
+/.idea
+/.vscode
+/.vs
 
 test_czann_prediction/*.tiff
