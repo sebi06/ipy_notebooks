@@ -1,6 +1,0 @@
-{
-  "python.pythonPath": "/home/sebi06/miniconda3/envs/cellpose_srh_gpu/bin/python",
-  "python.dataScience.debugJustMyCode": false,
-  "debug.allowBreakpointsEverywhere": true,
-  "autoDocstring.docstringFormat": "sphinx"
-}
